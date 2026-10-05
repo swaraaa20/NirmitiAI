@@ -131,7 +131,21 @@ cd NirmitiAI
 
 ## 📱 App Preview
 
-![Add Audio](./Screenshots/AddAudio.jpeg)
+<p align="center">
+  <img src="./Screenshots/AddAudio.jpeg" width="180"/>
+  <img src="./Screenshots/Add-product.jpeg" width="180"/>
+  <img src="./Screenshots/AddToBag.jpeg" width="180"/>
+  <img src="./Screenshots/BusinessInsight.jpeg" width="180"/>
+  <img src="./Screenshots/BusinessInsight2.jpeg" width="180"/>
+  <img src="./Screenshots/BuyersHomepage.jpeg" width="180"/>
+  <img src="./Screenshots/CheckoutPage.jpeg" width="180"/>
+  <img src="./Screenshots/Loansscheme.jpeg" width="180"/>
+  <img src="./Screenshots/LoanschemeCategory.jpeg" width="180"/>
+  <img src="./Screenshots/Loanschemelinks.jpeg" width="180"/>
+  <img src="./Screenshots/Loginpage.jpeg" width="180"/>
+  <img src="./Screenshots/sellerHomepage.jpeg" width="180"/>
+  <img src="./Screenshots/sellerspage.jpeg" width="180"/>
+</p>
 
 
 
