@@ -7,6 +7,57 @@ NirmitiAI is a mobile marketplace designed to help homemakers transform their sk
 By combining AI-assisted product cataloguing, image background removal, price suggestions, and a buyer-friendly shopping experience, NirmitiAI aims to make online selling more accessible to people starting their entrepreneurial journey from home.
 
 ---
+## 🎯 Problem Statement
+
+Homemakers who create products at home often face difficulties when trying to turn
+their skills into a small business.
+
+Common challenges include:
+
+- Lack of access to digital marketplaces
+- Difficulty creating professional product listings
+- Difficulty preparing attractive product photographs
+- Lack of knowledge about suitable product pricing
+- Difficulty writing product descriptions
+- Limited technical knowledge for starting online businesses
+
+NirmitiAI attempts to address these challenges through a simple mobile-first platform.
+
+
+## 📌 Project Overview
+
+NirmitiAI is a mobile application that connects homemakers who create products at home
+with customers looking to discover and purchase homemade products.
+
+The platform combines a marketplace experience with AI-assisted tools that simplify
+the process of creating product listings and preparing products for online selling.
+
+The project consists of:
+
+- A React Native + Expo mobile application
+- Supabase authentication and database
+- A FastAPI backend for AI-assisted features
+- A Node.js pricing service for price suggestions
+
+
+## 🚀 How to Install and Run
+
+### Prerequisites
+
+Install:
+
+- Node.js and npm
+- Expo Go
+- Python
+- A Supabase project
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/swaraaa20/NirmitiAI.git
+cd NirmitiAI
+
+```
 
 ## ✨ Key Features
 
