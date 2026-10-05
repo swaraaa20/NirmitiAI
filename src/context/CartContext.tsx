@@ -5,6 +5,8 @@ import React, {
   ReactNode,
 } from 'react';
 
+import { supabase } from '../services/supabase';
+
 type CartItem = {
   id: string;
   product_name: string;
@@ -15,7 +17,7 @@ type CartItem = {
 
 type CartContextType = {
   cart: CartItem[];
-  addToCart: (product: any) => void;
+  addToCart: (product: any) => Promise<void>;
   increaseQuantity: (id: string) => void;
   decreaseQuantity: (id: string) => void;
   removeFromCart: (id: string) => void;
@@ -35,67 +37,120 @@ export function CartProvider({
 }) {
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  const addToCart = (product: any) => {
-    setCart((currentCart) => {
-      const existingItem = currentCart.find(
-        (item) => item.id === product.id
-      );
+  const addToCart = async (product: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select(
+          'id, product_name, selling_price, image_url'
+        )
+        .eq('id', product.id)
+        .single();
 
-      if (existingItem) {
-        return currentCart.map((item) =>
-          item.id === product.id
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
-            : item
+      if (error) {
+        console.log(
+          'CART PRODUCT ERROR:',
+          error
         );
+        return;
       }
 
-      return [
-        ...currentCart,
-        {
-          id: product.id,
-          product_name: product.product_name,
-          selling_price: Number(
-            product.selling_price
-          ),
-          image_url: product.image_url,
-          quantity: 1,
-        },
-      ];
-    });
+      if (!data) {
+        console.log(
+          'CART PRODUCT NOT FOUND'
+        );
+        return;
+      }
+
+      const sellingPrice = Number(
+        data.selling_price
+      );
+
+      if (!Number.isFinite(sellingPrice)) {
+        console.log(
+          'INVALID PRODUCT PRICE:',
+          data.selling_price
+        );
+        return;
+      }
+
+      setCart((currentCart) => {
+        const existingItem =
+          currentCart.find(
+            (item) => item.id === data.id
+          );
+
+        if (existingItem) {
+          return currentCart.map((item) =>
+            item.id === data.id
+              ? {
+                  ...item,
+                  quantity:
+                    item.quantity + 1,
+                }
+              : item
+          );
+        }
+
+        return [
+          ...currentCart,
+          {
+            id: data.id,
+            product_name:
+              data.product_name,
+            selling_price: sellingPrice,
+            image_url: data.image_url,
+            quantity: 1,
+          },
+        ];
+      });
+    } catch (error) {
+      console.log(
+        'ADD TO CART ERROR:',
+        error
+      );
+    }
   };
 
-  const increaseQuantity = (id: string) => {
+  const increaseQuantity = (
+    id: string
+  ) => {
     setCart((currentCart) =>
       currentCart.map((item) =>
         item.id === id
           ? {
               ...item,
-              quantity: item.quantity + 1,
+              quantity:
+                item.quantity + 1,
             }
           : item
       )
     );
   };
 
-  const decreaseQuantity = (id: string) => {
+  const decreaseQuantity = (
+    id: string
+  ) => {
     setCart((currentCart) =>
       currentCart
         .map((item) =>
           item.id === id
             ? {
                 ...item,
-                quantity: item.quantity - 1,
+                quantity:
+                  item.quantity - 1,
               }
             : item
         )
-        .filter((item) => item.quantity > 0)
+        .filter(
+          (item) => item.quantity > 0
+        )
     );
   };
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = (
+    id: string
+  ) => {
     setCart((currentCart) =>
       currentCart.filter(
         (item) => item.id !== id
@@ -116,7 +171,8 @@ export function CartProvider({
   const cartTotal = cart.reduce(
     (total, item) =>
       total +
-      item.selling_price * item.quantity,
+      item.selling_price *
+        item.quantity,
     0
   );
 

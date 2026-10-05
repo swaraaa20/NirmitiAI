@@ -107,32 +107,31 @@ export default function ProductDetails() {
     }
   };
 
-  const handleAddToBag = () => {
-    addToCart(product);
+ const handleAddToBag = async () => {
+  await addToCart(product);
 
-    Alert.alert(
-      'Added to Bag 🛍️',
-      `${product.product_name} has been added to your bag.`,
-      [
-        {
-          text: 'Continue Shopping',
-          style: 'cancel',
-        },
-        {
-          text: 'View Bag',
-          onPress: () =>
-            router.push('/bag'),
-        },
-      ]
-    );
-  };
+  Alert.alert(
+    'Added to Bag 🛍️',
+    `${product.product_name} has been added to your bag.`,
+    [
+      {
+        text: 'Continue Shopping',
+        style: 'cancel',
+      },
+      {
+        text: 'View Bag',
+        onPress: () =>
+          router.push('/bag'),
+      },
+    ]
+  );
+};
 
-  const handleBuyNow = () => {
-    addToCart(product);
+ const handleBuyNow = async () => {
+  await addToCart(product);
 
-    router.push('/checkout');
-  };
-
+  router.push('/checkout');
+};
   const handleWhatsApp = async () => {
     if (!artisan?.phone) {
       Alert.alert(
@@ -153,7 +152,7 @@ export default function ProductDetails() {
         : 'there';
 
     const message =
-      `Hi ${whatsappName}! I'm interested in your product "${product.product_name}" listed on GharSe.`;
+      `Hi ${whatsappName}! I'm interested in your product "${product.product_name}" listed on निर्मितिAI.`;
 
     const url =
       `https://wa.me/${phoneNumber}?text=${encodeURIComponent(

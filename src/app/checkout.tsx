@@ -8,182 +8,402 @@ import {
   StyleSheet,
   Image,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
+
+import { useEffect, useState } from 'react';
 
 import { useCart } from '../context/CartContext';
 import { supabase } from '../services/supabase';
+
+type ProductDetails = {
+  id: string;
+  product_name: string;
+  image_url: string | null;
+  selling_price: number;
+  artisan_id: string;
+  category: string | null;
+};
+
 export default function CheckoutScreen() {
   const {
     cart,
-    cartTotal,
     cartCount,
     clearCart,
   } = useCart();
 
- const handlePlaceOrder = async () => {
-  if (cart.length === 0) {
-    Alert.alert(
-      'Your Bag is Empty',
-      'Please add a product before placing an order.'
+  const [products, setProducts] = useState<
+    Record<string, ProductDetails>
+  >({});
+
+  const [loadingProducts, setLoadingProducts] =
+    useState(true);
+
+  const [placingOrder, setPlacingOrder] =
+    useState(false);
+
+  const [fetchError, setFetchError] =
+    useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, [cart]);
+
+  const fetchProducts = async () => {
+    if (cart.length === 0) {
+      setProducts({});
+      setLoadingProducts(false);
+      return;
+    }
+
+    try {
+      setLoadingProducts(true);
+      setFetchError('');
+
+      const productIds = cart.map(
+        item => item.id
+      );
+
+      const {
+        data,
+        error,
+      } = await supabase
+        .from('products')
+        .select(`
+          id,
+          product_name,
+          image_url,
+          selling_price,
+          artisan_id,
+          category
+        `)
+        .in('id', productIds);
+
+      if (error) {
+        console.log(
+          'CHECKOUT PRODUCT FETCH ERROR:',
+          error
+        );
+
+        setFetchError(
+          error.message ||
+            'Could not fetch product details.'
+        );
+
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setFetchError(
+          'No products were found in your bag.'
+        );
+        return;
+      }
+
+      const productMap: Record<
+        string,
+        ProductDetails
+      > = {};
+
+      data.forEach(product => {
+        productMap[product.id] = {
+          id: product.id,
+          product_name:
+            product.product_name,
+          image_url:
+            product.image_url,
+          selling_price:
+            Number(product.selling_price),
+          artisan_id:
+            product.artisan_id,
+          category:
+            product.category,
+        };
+      });
+
+      setProducts(productMap);
+    } catch (error) {
+      console.log(
+        'CHECKOUT FETCH ERROR:',
+        error
+      );
+
+      setFetchError(
+        'Something went wrong while fetching your products.'
+      );
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  const getProductTotal = (
+    item: any
+  ) => {
+    const product =
+      products[item.id];
+
+    if (!product) {
+      return 0;
+    }
+
+    return (
+      product.selling_price *
+      item.quantity
     );
-    return;
-  }
+  };
 
-  try {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+  const checkoutTotal = cart.reduce(
+    (total, item) =>
+      total +
+      getProductTotal(item),
+    0
+  );
 
-    if (userError || !user) {
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0) {
       Alert.alert(
-        'Login Required',
-        'Please login before placing an order.'
+        'Your Bag is Empty',
+        'Please add a product before placing an order.'
       );
       return;
     }
 
-
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
-        buyer_id: user.id,
-        total_amount: cartTotal,
-        status: 'placed',
-      })
-      .select()
-      .single();
-
-    if (orderError || !order) {
-      console.log('ORDER ERROR:', orderError);
+    if (loadingProducts) {
       Alert.alert(
-        'Order Failed',
-        orderError?.message || 'Could not create your order.'
+        'Please wait',
+        'We are loading your product details.'
       );
       return;
     }
 
-    const productIds = cart.map((item) => item.id);
-
-    const {
-      data: products,
-      error: productsError,
-    } = await supabase
-      .from('products')
-      .select('id, artisan_id')
-      .in('id', productIds);
-
-    if (productsError) {
-      console.log('PRODUCT ERROR:', productsError);
-
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('id', order.id);
-
+    if (fetchError) {
       Alert.alert(
-        'Order Failed',
-        productsError.message
+        'Could not load products',
+        'Please try again before placing your order.'
+      );
+
+      await fetchProducts();
+      return;
+    }
+
+    const missingProduct = cart.some(
+      item => !products[item.id]
+    );
+
+    if (missingProduct) {
+      Alert.alert(
+        'Product Unavailable',
+        'One of the products in your bag could not be found.'
       );
       return;
     }
 
-    const orderItems = cart.map((item) => {
-      const product = products?.find(
-        (p) => p.id === item.id
-      );
-
-      return {
-        order_id: order.id,
-        product_id: item.id,
-        seller_id: product?.artisan_id,
-        quantity: item.quantity,
-        price: item.selling_price,
-      };
-    });
-
-    if (orderItems.some((item) => !item.seller_id)) {
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('id', order.id);
-
+    if (checkoutTotal <= 0) {
       Alert.alert(
-        'Order Failed',
-        'Could not identify the seller for one of the products.'
+        'Invalid Total',
+        'The order total could not be calculated.'
       );
       return;
     }
 
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(orderItems);
+    try {
+      setPlacingOrder(true);
 
-    if (itemsError) {
-      console.log('ORDER ITEMS ERROR:', itemsError);
-
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('id', order.id);
-
-      Alert.alert(
-        'Order Failed',
-        itemsError.message
-      );
-      return;
-    }
-
-    Alert.alert(
-      'Order Placed 🎉',
-      `Your order of ₹${cartTotal.toLocaleString(
-        'en-IN'
-      )} has been successfully placed!`,
-      [
-        {
-          text: 'Continue Shopping',
-          onPress: () => {
-            clearCart();
-            router.replace('/buyer');
-          },
+      const {
+        data: {
+          user,
         },
-      ]
-    );
-  } catch (error) {
-    console.log('CHECKOUT ERROR:', error);
+        error: userError,
+      } =
+        await supabase.auth.getUser();
 
-    Alert.alert(
-      'Error',
-      'Something went wrong while placing your order.'
-    );
-  }
-};
+      if (
+        userError ||
+        !user
+      ) {
+        Alert.alert(
+          'Login Required',
+          'Please login before placing an order.'
+        );
+        return;
+      }
 
-  /* EMPTY CART */
+      const {
+        data: order,
+        error: orderError,
+      } =
+        await supabase
+          .from('orders')
+          .insert({
+            buyer_id:
+              user.id,
+            total_amount:
+              checkoutTotal,
+            status:
+              'placed',
+          })
+          .select()
+          .single();
+
+      if (
+        orderError ||
+        !order
+      ) {
+        console.log(
+          'ORDER ERROR:',
+          orderError
+        );
+
+        Alert.alert(
+          'Order Failed',
+          orderError?.message ||
+            'Could not create your order.'
+        );
+
+        return;
+      }
+
+      const orderItems =
+        cart.map(item => {
+          const product =
+            products[item.id];
+
+          return {
+            order_id:
+              order.id,
+
+            product_id:
+              item.id,
+
+            seller_id:
+              product.artisan_id,
+
+            quantity:
+              item.quantity,
+
+            price:
+              product.selling_price,
+          };
+        });
+
+      const {
+        error: itemsError,
+      } =
+        await supabase
+          .from('order_items')
+          .insert(
+            orderItems
+          );
+
+      if (itemsError) {
+        console.log(
+          'ORDER ITEMS ERROR:',
+          itemsError
+        );
+
+        await supabase
+          .from('orders')
+          .delete()
+          .eq(
+            'id',
+            order.id
+          );
+
+        Alert.alert(
+          'Order Failed',
+          itemsError.message
+        );
+
+        return;
+      }
+
+      Alert.alert(
+        'Order Placed 🎉',
+        `Your order of ₹${checkoutTotal.toLocaleString(
+          'en-IN'
+        )} has been successfully placed!`,
+        [
+          {
+            text:
+              'Continue Shopping',
+            onPress: () => {
+              clearCart();
+              router.replace(
+                '/buyer'
+              );
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.log(
+        'CHECKOUT ERROR:',
+        error
+      );
+
+      Alert.alert(
+        'Checkout Error',
+        'Something went wrong while placing your order. Please try again.'
+      );
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
 
   if (cart.length === 0) {
     return (
-      <View style={styles.emptyContainer}>
-        <View style={styles.emptyIconCircle}>
-          <Text style={styles.emptyEmoji}>🛍️</Text>
+      <View
+        style={
+          styles.emptyContainer
+        }
+      >
+        <View
+          style={
+            styles.emptyIconCircle
+          }
+        >
+          <Text
+            style={
+              styles.emptyEmoji
+            }
+          >
+            🛍️
+          </Text>
         </View>
 
-        <Text style={styles.emptyTitle}>
+        <Text
+          style={
+            styles.emptyTitle
+          }
+        >
           Your Bag is Empty
         </Text>
 
-        <Text style={styles.emptyText}>
-          Add some beautiful Indian crafts before
+        <Text
+          style={
+            styles.emptyText
+          }
+        >
+          Add something you love
+          from निर्मितिAI before
           checkout.
         </Text>
 
         <Pressable
-          style={styles.shopButton}
+          style={
+            styles.shopButton
+          }
           onPress={() =>
-            router.replace('/buyer')
+            router.replace(
+              '/buyer'
+            )
           }
         >
-          <Text style={styles.shopButtonText}>
+          <Text
+            style={
+              styles.shopButtonText
+            }
+          >
             Continue Shopping
           </Text>
         </Pressable>
@@ -192,97 +412,211 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
-
+    <View
+      style={styles.container}
+    >
       {/* HEADER */}
 
-      <View style={styles.header}>
+      <View
+        style={styles.header}
+      >
         <Pressable
-          onPress={() => router.back()}
-          style={styles.backButtonContainer}
+          onPress={() =>
+            router.back()
+          }
+          style={
+            styles.backButtonContainer
+          }
         >
-          <Text style={styles.backButton}>
+          <Text
+            style={
+              styles.backButton
+            }
+          >
             ‹
           </Text>
         </Pressable>
 
-        <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>
+        <View
+          style={
+            styles.headerCenter
+          }
+        >
+          <Text
+            style={
+              styles.brandName
+            }
+          >
+            निर्मितिAI
+          </Text>
+
+          <Text
+            style={
+              styles.headerTitle
+            }
+          >
             Checkout
           </Text>
 
-          <Text style={styles.headerSubtitle}>
+          <Text
+            style={
+              styles.headerSubtitle
+            }
+          >
             Complete your order
           </Text>
         </View>
 
-        <View style={styles.headerRight}>
-          <Text style={styles.lockIcon}>
+        <View
+          style={
+            styles.headerRight
+          }
+        >
+          <Text
+            style={
+              styles.lockIcon
+            }
+          >
             🔒
           </Text>
         </View>
       </View>
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.content
+        }
       >
+        {/* STEPS */}
 
-        {/* STEP INDICATOR */}
-
-        <View style={styles.stepsContainer}>
-          <View style={styles.stepActive}>
-            <Text style={styles.stepNumber}>
+        <View
+          style={
+            styles.stepsContainer
+          }
+        >
+          <View
+            style={
+              styles.stepActive
+            }
+          >
+            <Text
+              style={
+                styles.stepNumber
+              }
+            >
               ✓
             </Text>
           </View>
 
-          <View style={styles.stepLine} />
+          <View
+            style={
+              styles.stepLine
+            }
+          />
 
-          <View style={styles.stepActive}>
-            <Text style={styles.stepNumber}>
+          <View
+            style={
+              styles.stepActive
+            }
+          >
+            <Text
+              style={
+                styles.stepNumber
+              }
+            >
               2
             </Text>
           </View>
 
-          <View style={styles.stepLine} />
+          <View
+            style={
+              styles.stepLine
+            }
+          />
 
-          <View style={styles.stepInactive}>
-            <Text style={styles.stepInactiveNumber}>
+          <View
+            style={
+              styles.stepInactive
+            }
+          >
+            <Text
+              style={
+                styles.stepInactiveNumber
+              }
+            >
               3
             </Text>
           </View>
         </View>
 
-        <View style={styles.stepLabels}>
-          <Text style={styles.stepLabelActive}>
+        <View
+          style={
+            styles.stepLabels
+          }
+        >
+          <Text
+            style={
+              styles.stepLabelActive
+            }
+          >
             Bag
           </Text>
 
-          <Text style={styles.stepLabelActive}>
+          <Text
+            style={
+              styles.stepLabelActive
+            }
+          >
             Checkout
           </Text>
 
-          <Text style={styles.stepLabel}>
+          <Text
+            style={
+              styles.stepLabel
+            }
+          >
             Confirmation
           </Text>
         </View>
 
         {/* ORDER SUMMARY */}
 
-        <View style={styles.sectionHeader}>
+        <View
+          style={
+            styles.sectionHeader
+          }
+        >
           <View>
-            <Text style={styles.sectionTitle}>
-              Order Summary
+            <Text
+              style={
+                styles.sectionTitle
+              }
+            >
+              Your Order
             </Text>
 
-            <Text style={styles.sectionSubtitle}>
-              Review your selected crafts
+            <Text
+              style={
+                styles.sectionSubtitle
+              }
+            >
+              Review your selected products
             </Text>
           </View>
 
-          <View style={styles.itemBadge}>
-            <Text style={styles.itemBadgeText}>
+          <View
+            style={
+              styles.itemBadge
+            }
+          >
+            <Text
+              style={
+                styles.itemBadgeText
+              }
+            >
               {cartCount}{' '}
               {cartCount === 1
                 ? 'item'
@@ -291,158 +625,398 @@ export default function CheckoutScreen() {
           </View>
         </View>
 
+        {/* FETCH ERROR */}
+
+        {fetchError ? (
+          <View
+            style={
+              styles.errorCard
+            }
+          >
+            <Text
+              style={
+                styles.errorIcon
+              }
+            >
+              ⚠️
+            </Text>
+
+            <View
+              style={
+                styles.errorContent
+              }
+            >
+              <Text
+                style={
+                  styles.errorTitle
+                }
+              >
+                Could not load products
+              </Text>
+
+              <Text
+                style={
+                  styles.errorText
+                }
+              >
+                {fetchError}
+              </Text>
+
+              <Pressable
+                style={
+                  styles.retryButton
+                }
+                onPress={
+                  fetchProducts
+                }
+              >
+                <Text
+                  style={
+                    styles.retryButtonText
+                  }
+                >
+                  Try Again
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         {/* PRODUCTS */}
 
-        <View style={styles.productsContainer}>
-          {cart.map((item) => (
-            <View
-              key={item.id}
-              style={styles.productCard}
+        {loadingProducts ? (
+          <View
+            style={
+              styles.loadingCard
+            }
+          >
+            <ActivityIndicator
+              size="small"
+              color="#456B42"
+            />
+
+            <Text
+              style={
+                styles.loadingText
+              }
             >
-              <Image
-                source={{
-                  uri: item.image_url,
-                }}
-                style={styles.productImage}
-              />
+              Loading your products...
+            </Text>
+          </View>
+        ) : (
+          <View
+            style={
+              styles.productsContainer
+            }
+          >
+            {cart.map(item => {
+              const product =
+                products[item.id];
 
-              <View style={styles.productInfo}>
-                <Text
-                  style={styles.productName}
-                  numberOfLines={2}
+              if (!product) {
+                return null;
+              }
+
+              const itemTotal =
+                product.selling_price *
+                item.quantity;
+
+              return (
+                <View
+                  key={item.id}
+                  style={
+                    styles.productCard
+                  }
                 >
-                  {item.product_name}
-                </Text>
+                  <Image
+                    source={{
+                      uri:
+                        product.image_url ||
+                        undefined,
+                    }}
+                    style={
+                      styles.productImage
+                    }
+                  />
 
-                <View style={styles.artisanRow}>
-                  <Text style={styles.artisanDot}>
-                    ●
-                  </Text>
-
-                  <Text style={styles.artisan}>
-                    Indian Artisan
-                  </Text>
-                </View>
-
-                <View style={styles.productBottom}>
-                  <View style={styles.quantityBadge}>
+                  <View
+                    style={
+                      styles.productInfo
+                    }
+                  >
                     <Text
                       style={
-                        styles.quantityBadgeText
+                        styles.productName
+                      }
+                      numberOfLines={2}
+                    >
+                      {
+                        product.product_name
+                      }
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.categoryText
                       }
                     >
-                      Qty {item.quantity}
+                      {product.category ||
+                        'Home-made product'}
                     </Text>
+
+                    <View
+                      style={
+                        styles.priceQuantityRow
+                      }
+                    >
+                      <View>
+                        <Text
+                          style={
+                            styles.unitLabel
+                          }
+                        >
+                          Price
+                        </Text>
+
+                        <Text
+                          style={
+                            styles.unitPrice
+                          }
+                        >
+                          ₹
+                          {product.selling_price.toLocaleString(
+                            'en-IN'
+                          )}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={
+                          styles.quantityBadge
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.quantityBadgeText
+                          }
+                        >
+                          Qty {item.quantity}
+                        </Text>
+                      </View>
+
+                      <View
+                        style={
+                          styles.itemTotalBox
+                        }
+                      >
+                        <Text
+                          style={
+                            styles.unitLabel
+                          }
+                        >
+                          Total
+                        </Text>
+
+                        <Text
+                          style={
+                            styles.productPrice
+                          }
+                        >
+                          ₹
+                          {itemTotal.toLocaleString(
+                            'en-IN'
+                          )}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-
-                  <Text style={styles.productPrice}>
-                    ₹
-                    {(
-                      item.selling_price *
-                      item.quantity
-                    ).toLocaleString('en-IN')}
-                  </Text>
                 </View>
-              </View>
-            </View>
-          ))}
-        </View>
+              );
+            })}
+          </View>
+        )}
 
-        {/* DELIVERY ADDRESS */}
+        {/* DELIVERY */}
 
-        <View style={styles.sectionBlock}>
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionIcon}>
+        <View
+          style={styles.sectionBlock}
+        >
+          <View
+            style={
+              styles.sectionTitleRow
+            }
+          >
+            <Text
+              style={
+                styles.sectionIcon
+              }
+            >
               📍
             </Text>
 
             <View>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
                 Delivery Address
               </Text>
 
               <Text
-                style={styles.sectionSubtitle}
+                style={
+                  styles.sectionSubtitle
+                }
               >
                 Where should we deliver?
               </Text>
             </View>
           </View>
 
-          <View style={styles.addressCard}>
-            <View style={styles.addressIconBox}>
-              <Text style={styles.addressIcon}>
+          <View
+            style={
+              styles.addressCard
+            }
+          >
+            <View
+              style={
+                styles.addressIconBox
+              }
+            >
+              <Text
+                style={
+                  styles.addressIcon
+                }
+              >
                 🏠
               </Text>
             </View>
 
-            <View style={styles.addressContent}>
-              <Text style={styles.addressTitle}>
+            <View
+              style={
+                styles.addressContent
+              }
+            >
+              <Text
+                style={
+                  styles.addressTitle
+                }
+              >
                 Demo Delivery Address
               </Text>
 
               <Text
-                style={styles.addressDescription}
+                style={
+                  styles.addressDescription
+                }
               >
                 Pune, Maharashtra, India
               </Text>
 
-              <View style={styles.demoBadge}>
-                <Text style={styles.demoBadgeText}>
+              <View
+                style={
+                  styles.demoBadge
+                }
+              >
+                <Text
+                  style={
+                    styles.demoBadgeText
+                  }
+                >
                   Demo address
                 </Text>
               </View>
             </View>
-
-            <Text style={styles.chevron}>
-              ›
-            </Text>
           </View>
         </View>
 
         {/* PAYMENT */}
 
-        <View style={styles.sectionBlock}>
-          <View style={styles.sectionTitleRow}>
-            <Text style={styles.sectionIcon}>
+        <View
+          style={styles.sectionBlock}
+        >
+          <View
+            style={
+              styles.sectionTitleRow
+            }
+          >
+            <Text
+              style={
+                styles.sectionIcon
+              }
+            >
               💳
             </Text>
 
             <View>
-              <Text style={styles.sectionTitle}>
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
                 Payment Method
               </Text>
 
               <Text
-                style={styles.sectionSubtitle}
+                style={
+                  styles.sectionSubtitle
+                }
               >
-                Choose how you want to pay
+                Payment option for your order
               </Text>
             </View>
           </View>
 
-          <View style={styles.paymentCard}>
-            <View style={styles.paymentIconBox}>
-              <Text style={styles.paymentIcon}>
+          <View
+            style={
+              styles.paymentCard
+            }
+          >
+            <View
+              style={
+                styles.paymentIconBox
+              }
+            >
+              <Text
+                style={
+                  styles.paymentIcon
+                }
+              >
                 💳
               </Text>
             </View>
 
-            <View style={styles.paymentContent}>
-              <Text style={styles.paymentTitle}>
+            <View
+              style={
+                styles.paymentContent
+              }
+            >
+              <Text
+                style={
+                  styles.paymentTitle
+                }
+              >
                 UPI / Cash on Delivery
               </Text>
 
               <Text
-                style={styles.paymentDescription}
+                style={
+                  styles.paymentDescription
+                }
               >
                 Payment integration coming soon
               </Text>
             </View>
 
-            <View style={styles.selectedCircle}>
+            <View
+              style={
+                styles.selectedCircle
+              }
+            >
               <Text
-                style={styles.selectedCheck}
+                style={
+                  styles.selectedCheck
+                }
               >
                 ✓
               </Text>
@@ -452,115 +1026,209 @@ export default function CheckoutScreen() {
 
         {/* PRICE DETAILS */}
 
-        <View style={styles.priceCard}>
-          <Text style={styles.priceCardTitle}>
+        <View
+          style={
+            styles.priceCard
+          }
+        >
+          <Text
+            style={
+              styles.priceCardTitle
+            }
+          >
             Price Details
           </Text>
 
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>
+          <View
+            style={styles.priceRow}
+          >
+            <Text
+              style={
+                styles.priceLabel
+              }
+            >
               Products
             </Text>
 
-            <Text style={styles.priceValue}>
-              ₹{cartTotal.toLocaleString('en-IN')}
+            <Text
+              style={
+                styles.priceValue
+              }
+            >
+              ₹
+              {checkoutTotal.toLocaleString(
+                'en-IN'
+              )}
             </Text>
           </View>
 
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>
+          <View
+            style={styles.priceRow}
+          >
+            <Text
+              style={
+                styles.priceLabel
+              }
+            >
               Delivery
             </Text>
 
-            <Text style={styles.freeText}>
+            <Text
+              style={
+                styles.freeText
+              }
+            >
               FREE
             </Text>
           </View>
 
-          <View style={styles.divider} />
+          <View
+            style={styles.divider}
+          />
 
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>
+          <View
+            style={styles.totalRow}
+          >
+            <Text
+              style={
+                styles.totalLabel
+              }
+            >
               Total Amount
             </Text>
 
-            <Text style={styles.totalPrice}>
-              ₹{cartTotal.toLocaleString('en-IN')}
+            <Text
+              style={
+                styles.totalPrice
+              }
+            >
+              ₹
+              {checkoutTotal.toLocaleString(
+                'en-IN'
+              )}
             </Text>
           </View>
         </View>
 
-        {/* TRUST MESSAGE */}
+        {/* TRUST */}
 
-        <View style={styles.trustCard}>
-          <Text style={styles.trustIcon}>
-            🛡️
+        <View
+          style={styles.trustCard}
+        >
+          <Text
+            style={styles.trustIcon}
+          >
+            🏡
           </Text>
 
-          <View style={styles.trustContent}>
-            <Text style={styles.trustTitle}>
-              Supporting Indian Artisans
+          <View
+            style={styles.trustContent}
+          >
+            <Text
+              style={styles.trustTitle}
+            >
+              Supporting Home Businesses
             </Text>
 
-            <Text style={styles.trustText}>
-              Your purchase directly supports
-              traditional artisans and their
-              communities.
+            <Text
+              style={styles.trustText}
+            >
+              Every purchase helps a homemaker
+              turn their skills and creativity
+              into a small business.
             </Text>
           </View>
         </View>
 
-        <View style={styles.bottomSpace} />
-
+        <View
+          style={styles.bottomSpace}
+        />
       </ScrollView>
 
-      {/* BOTTOM ORDER BAR */}
+      {/* BOTTOM BAR */}
 
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomTotal}>
-          <Text style={styles.bottomTotalLabel}>
+      <View
+        style={styles.bottomBar}
+      >
+        <View
+          style={styles.bottomTotal}
+        >
+          <Text
+            style={
+              styles.bottomTotalLabel
+            }
+          >
             Total
           </Text>
 
-          <Text style={styles.bottomTotalPrice}>
-            ₹{cartTotal.toLocaleString('en-IN')}
+          <Text
+            style={
+              styles.bottomTotalPrice
+            }
+          >
+            ₹
+            {checkoutTotal.toLocaleString(
+              'en-IN'
+            )}
           </Text>
         </View>
 
         <Pressable
-          style={styles.orderButton}
-          onPress={handlePlaceOrder}
+          style={[
+            styles.orderButton,
+            (placingOrder ||
+              loadingProducts ||
+              !!fetchError) &&
+              styles.orderButtonDisabled,
+          ]}
+          onPress={
+            handlePlaceOrder
+          }
+          disabled={
+            placingOrder ||
+            loadingProducts
+          }
         >
-          <Text style={styles.orderButtonText}>
-            Place Order
-          </Text>
+          {placingOrder ? (
+            <ActivityIndicator
+              color="#FFFFFF"
+            />
+          ) : (
+            <>
+              <Text
+                style={
+                  styles.orderButtonText
+                }
+              >
+                Place Order
+              </Text>
 
-          <Text style={styles.orderArrow}>
-            →
-          </Text>
+              <Text
+                style={
+                  styles.orderArrow
+                }
+              >
+                →
+              </Text>
+            </>
+          )}
         </Pressable>
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  /* MAIN */
-
   container: {
     flex: 1,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#F8F7EA',
   },
 
-  /* HEADER */
-
   header: {
-    height: 112,
-    paddingTop: 48,
+    minHeight: 126,
+    paddingTop: 45,
     paddingHorizontal: 18,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#456B42',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -570,7 +1238,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor:
-      'rgba(255,255,255,0.13)',
+      'rgba(255,255,255,0.14)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -587,6 +1255,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  brandName: {
+    color: '#F7EBC1',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+
   headerTitle: {
     color: '#FFFFFF',
     fontSize: 21,
@@ -594,7 +1269,7 @@ const styles = StyleSheet.create({
   },
 
   headerSubtitle: {
-    color: '#EBD7C9',
+    color: '#DDE7D7',
     fontSize: 11,
     marginTop: 3,
   },
@@ -604,7 +1279,7 @@ const styles = StyleSheet.create({
     height: 42,
     borderRadius: 21,
     backgroundColor:
-      'rgba(255,255,255,0.13)',
+      'rgba(255,255,255,0.14)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -613,15 +1288,11 @@ const styles = StyleSheet.create({
     fontSize: 17,
   },
 
-  /* CONTENT */
-
   content: {
     paddingHorizontal: 18,
     paddingTop: 22,
     paddingBottom: 150,
   },
-
-  /* STEPS */
 
   stepsContainer: {
     flexDirection: 'row',
@@ -634,7 +1305,7 @@ const styles = StyleSheet.create({
     width: 29,
     height: 29,
     borderRadius: 15,
-    backgroundColor: '#8B4A2B',
+    backgroundColor: '#456B42',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -643,7 +1314,7 @@ const styles = StyleSheet.create({
     width: 29,
     height: 29,
     borderRadius: 15,
-    backgroundColor: '#E7D8CC',
+    backgroundColor: '#DDE4D5',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -655,7 +1326,7 @@ const styles = StyleSheet.create({
   },
 
   stepInactiveNumber: {
-    color: '#8C8179',
+    color: '#788171',
     fontSize: 12,
     fontWeight: '700',
   },
@@ -663,7 +1334,7 @@ const styles = StyleSheet.create({
   stepLine: {
     height: 2,
     width: 58,
-    backgroundColor: '#CDAE98',
+    backgroundColor: '#B9C8AE',
     marginHorizontal: 6,
   },
 
@@ -677,16 +1348,14 @@ const styles = StyleSheet.create({
 
   stepLabelActive: {
     fontSize: 10,
-    color: '#7A3E22',
+    color: '#456B42',
     fontWeight: '700',
   },
 
   stepLabel: {
     fontSize: 10,
-    color: '#9C9189',
+    color: '#8B9385',
   },
-
-  /* SECTION */
 
   sectionHeader: {
     flexDirection: 'row',
@@ -709,49 +1378,47 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#3B2B25',
+    color: '#403630',
   },
 
   sectionSubtitle: {
     fontSize: 11,
-    color: '#96877E',
+    color: '#81756D',
     marginTop: 3,
   },
 
   itemBadge: {
-    backgroundColor: '#F0E2D6',
+    backgroundColor: '#E3EAD9',
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 14,
   },
 
   itemBadgeText: {
-    color: '#7A3E22',
+    color: '#456B42',
     fontSize: 11,
     fontWeight: '700',
   },
-
-  /* PRODUCTS */
 
   productsContainer: {
     marginBottom: 5,
   },
 
   productCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFDF4',
     borderRadius: 18,
     padding: 11,
     flexDirection: 'row',
     marginBottom: 11,
     borderWidth: 1,
-    borderColor: '#EDE2D9',
+    borderColor: '#D8DDCE',
   },
 
   productImage: {
     width: 92,
     height: 92,
     borderRadius: 14,
-    backgroundColor: '#F0E6DD',
+    backgroundColor: '#E6EBD9',
   },
 
   productInfo: {
@@ -764,75 +1431,77 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 20,
     fontWeight: '800',
-    color: '#3B2B25',
+    color: '#403630',
   },
 
-  artisanRow: {
+  categoryText: {
+    fontSize: 10,
+    color: '#81756D',
+    marginTop: 4,
+  },
+
+  priceQuantityRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 6,
-  },
-
-  artisanDot: {
-    color: '#B86D42',
-    fontSize: 8,
-    marginRight: 5,
-  },
-
-  artisan: {
-    fontSize: 11,
-    color: '#94877F',
-  },
-
-  productBottom: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    alignItems: 'flex-end',
     marginTop: 10,
   },
 
+  unitLabel: {
+    fontSize: 9,
+    color: '#8A8178',
+    marginBottom: 2,
+  },
+
+  unitPrice: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#456B42',
+  },
+
   quantityBadge: {
-    backgroundColor: '#F7EFE8',
+    backgroundColor: '#EEF2E8',
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 8,
+    marginLeft: 10,
   },
 
   quantityBadgeText: {
-    color: '#79675D',
+    color: '#5F6C58',
     fontSize: 10,
     fontWeight: '700',
   },
 
-  productPrice: {
-    color: '#7A3E22',
-    fontSize: 16,
-    fontWeight: '800',
+  itemTotalBox: {
+    marginLeft: 'auto',
+    alignItems: 'flex-end',
   },
 
-  /* SECTION BLOCK */
+  productPrice: {
+    color: '#456B42',
+    fontSize: 15,
+    fontWeight: '900',
+  },
 
   sectionBlock: {
     marginTop: 23,
   },
 
-  /* ADDRESS */
-
   addressCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFDF4',
     borderRadius: 17,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#EDE2D9',
+    borderColor: '#D8DDCE',
   },
 
   addressIconBox: {
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: '#F7E9DE',
+    backgroundColor: '#E3EAD9',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -849,18 +1518,18 @@ const styles = StyleSheet.create({
   addressTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#3B2B25',
+    color: '#403630',
   },
 
   addressDescription: {
     fontSize: 12,
-    color: '#796D65',
+    color: '#70685F',
     marginTop: 4,
   },
 
   demoBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#F4E6DA',
+    backgroundColor: '#F3E8C7',
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
@@ -868,34 +1537,26 @@ const styles = StyleSheet.create({
   },
 
   demoBadgeText: {
-    color: '#9A6244',
+    color: '#806B32',
     fontSize: 9,
     fontWeight: '700',
   },
 
-  chevron: {
-    fontSize: 25,
-    color: '#A48D80',
-    marginLeft: 8,
-  },
-
-  /* PAYMENT */
-
   paymentCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFDF4',
     borderRadius: 17,
     padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5D1C2',
+    borderColor: '#D8DDCE',
   },
 
   paymentIconBox: {
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: '#F7E9DE',
+    backgroundColor: '#E3EAD9',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -912,12 +1573,12 @@ const styles = StyleSheet.create({
   paymentTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#3B2B25',
+    color: '#403630',
   },
 
   paymentDescription: {
     fontSize: 11,
-    color: '#8C7E75',
+    color: '#81756D',
     marginTop: 4,
   },
 
@@ -925,7 +1586,7 @@ const styles = StyleSheet.create({
     width: 23,
     height: 23,
     borderRadius: 12,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#456B42',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -936,19 +1597,17 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
 
-  /* PRICE */
-
   priceCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFDF4',
     borderRadius: 18,
     padding: 17,
     marginTop: 24,
     borderWidth: 1,
-    borderColor: '#EDE2D9',
+    borderColor: '#D8DDCE',
   },
 
   priceCardTitle: {
-    color: '#3B2B25',
+    color: '#403630',
     fontSize: 15,
     fontWeight: '800',
     marginBottom: 15,
@@ -967,20 +1626,20 @@ const styles = StyleSheet.create({
   },
 
   priceValue: {
-    color: '#4B3B33',
+    color: '#403630',
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 
   freeText: {
-    color: '#4D8A60',
+    color: '#4F7048',
     fontSize: 12,
     fontWeight: '800',
   },
 
   divider: {
     height: 1,
-    backgroundColor: '#EEE4DC',
+    backgroundColor: '#D8DDCE',
     marginVertical: 5,
   },
 
@@ -992,22 +1651,20 @@ const styles = StyleSheet.create({
   },
 
   totalLabel: {
-    color: '#3B2B25',
+    color: '#403630',
     fontSize: 16,
     fontWeight: '800',
   },
 
   totalPrice: {
-    color: '#7A3E22',
+    color: '#456B42',
     fontSize: 21,
     fontWeight: '900',
   },
 
-  /* TRUST */
-
   trustCard: {
     flexDirection: 'row',
-    backgroundColor: '#F3E7DA',
+    backgroundColor: '#E6EBD9',
     borderRadius: 17,
     padding: 14,
     marginTop: 15,
@@ -1024,13 +1681,13 @@ const styles = StyleSheet.create({
   },
 
   trustTitle: {
-    color: '#68402C',
+    color: '#456B42',
     fontSize: 12,
     fontWeight: '800',
   },
 
   trustText: {
-    color: '#8A6E5D',
+    color: '#687361',
     fontSize: 10,
     lineHeight: 15,
     marginTop: 3,
@@ -1040,16 +1697,14 @@ const styles = StyleSheet.create({
     height: 30,
   },
 
-  /* BOTTOM BAR */
-
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#FFFDF4',
     borderTopWidth: 1,
-    borderTopColor: '#E8DCD3',
+    borderTopColor: '#D8DDCE',
     paddingHorizontal: 18,
     paddingTop: 12,
     paddingBottom: 25,
@@ -1063,12 +1718,12 @@ const styles = StyleSheet.create({
   },
 
   bottomTotalLabel: {
-    color: '#8D8179',
+    color: '#81756D',
     fontSize: 11,
   },
 
   bottomTotalPrice: {
-    color: '#3B2B25',
+    color: '#403630',
     fontSize: 21,
     fontWeight: '900',
     marginTop: 2,
@@ -1078,11 +1733,15 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: 21,
     borderRadius: 15,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#456B42',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     minWidth: 155,
+  },
+
+  orderButtonDisabled: {
+    opacity: 0.55,
   },
 
   orderButtonText: {
@@ -1098,11 +1757,75 @@ const styles = StyleSheet.create({
     marginTop: -1,
   },
 
-  /* EMPTY */
+  loadingCard: {
+    backgroundColor: '#FFFDF4',
+    borderRadius: 17,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: '#D8DDCE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+
+  loadingText: {
+    marginLeft: 10,
+    color: '#687361',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+
+  errorCard: {
+    backgroundColor: '#F8E9E4',
+    borderRadius: 17,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5C8BD',
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+
+  errorIcon: {
+    fontSize: 23,
+    marginRight: 10,
+  },
+
+  errorContent: {
+    flex: 1,
+  },
+
+  errorTitle: {
+    color: '#744436',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  errorText: {
+    color: '#80645B',
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 3,
+  },
+
+  retryButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#456B42',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    marginTop: 9,
+  },
+
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
 
   emptyContainer: {
     flex: 1,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#F8F7EA',
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 30,
@@ -1112,7 +1835,7 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#F0E1D5',
+    backgroundColor: '#E3EAD9',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -1125,12 +1848,12 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 25,
     fontWeight: '900',
-    color: '#3B2B25',
+    color: '#403630',
   },
 
   emptyText: {
     fontSize: 14,
-    color: '#8C7E75',
+    color: '#81756D',
     textAlign: 'center',
     lineHeight: 21,
     marginTop: 9,
@@ -1138,7 +1861,7 @@ const styles = StyleSheet.create({
   },
 
   shopButton: {
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#456B42',
     paddingHorizontal: 26,
     paddingVertical: 15,
     borderRadius: 14,
@@ -1149,5 +1872,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-
 });
