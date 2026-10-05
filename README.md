@@ -131,7 +131,7 @@ cd NirmitiAI
 
 ## 📱 App Preview
 
-![Add Audio](./screenshots/AddAudio.jpeg)
+![Add Audio](./Screenshots/AddAudio.jpeg)
 
 
 
