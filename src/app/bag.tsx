@@ -24,9 +24,7 @@ export default function BagScreen() {
   return (
     <View style={styles.container}>
 
-      {/* HEADER */}
       <View style={styles.header}>
-
         <Pressable
           style={styles.backButtonContainer}
           onPress={() => router.back()}
@@ -49,12 +47,9 @@ export default function BagScreen() {
         </View>
 
         <View style={{ width: 42 }} />
-
       </View>
 
       {cart.length === 0 ? (
-
-        /* EMPTY BAG */
 
         <View style={styles.emptyContainer}>
 
@@ -69,18 +64,16 @@ export default function BagScreen() {
           </Text>
 
           <Text style={styles.emptyText}>
-            Discover beautiful handmade crafts
-            created by talented Indian artisans.
+            Discover beautiful products made by
+            talented homemakers from home.
           </Text>
 
           <Pressable
             style={styles.exploreButton}
-            onPress={() =>
-              router.replace('/buyer')
-            }
+            onPress={() => router.replace('/buyer')}
           >
             <Text style={styles.exploreButtonText}>
-              Explore Crafts
+              Explore Products
             </Text>
           </Pressable>
 
@@ -95,32 +88,27 @@ export default function BagScreen() {
             contentContainerStyle={styles.content}
           >
 
-            {/* BAG INTRO */}
-
             <View style={styles.introRow}>
 
               <View>
                 <Text style={styles.pageHeading}>
-                  Your selected crafts
+                  Your selected products
                 </Text>
 
                 <Text style={styles.itemCount}>
                   {cartCount}{' '}
-                  {cartCount === 1
-                    ? 'item'
-                    : 'items'}{' '}
+                  {cartCount === 1 ? 'item' : 'items'}{' '}
                   in your bag
                 </Text>
               </View>
 
-              <Text style={styles.handmadeIcon}>
-                ✦
-              </Text>
+              <View style={styles.handmadeIcon}>
+                <Text style={styles.handmadeIconText}>
+                  ✦
+                </Text>
+              </View>
 
             </View>
-
-
-            {/* PRODUCTS */}
 
             {cart.map((item) => (
 
@@ -128,8 +116,6 @@ export default function BagScreen() {
                 key={item.id}
                 style={styles.productCard}
               >
-
-                {/* IMAGE */}
 
                 <Image
                   source={{
@@ -139,8 +125,6 @@ export default function BagScreen() {
                 />
 
                 <View style={styles.productInfo}>
-
-                  {/* NAME + DELETE */}
 
                   <View style={styles.nameRow}>
 
@@ -165,15 +149,12 @@ export default function BagScreen() {
                   </View>
 
                   <Text style={styles.artisan}>
-                    Handmade by an Indian artisan
+                    Made by a homemaker
                   </Text>
 
                   <Text style={styles.price}>
                     ₹{item.selling_price}
                   </Text>
-
-
-                  {/* QUANTITY */}
 
                   <View style={styles.bottomRow}>
 
@@ -208,9 +189,7 @@ export default function BagScreen() {
                     </View>
 
                     <Text style={styles.itemTotal}>
-                      ₹
-                      {item.selling_price *
-                        item.quantity}
+                      ₹{item.selling_price * item.quantity}
                     </Text>
 
                   </View>
@@ -220,9 +199,6 @@ export default function BagScreen() {
               </View>
 
             ))}
-
-
-            {/* DELIVERY BENEFIT */}
 
             <View style={styles.deliveryCard}>
 
@@ -249,9 +225,6 @@ export default function BagScreen() {
               </Text>
 
             </View>
-
-
-            {/* ORDER SUMMARY */}
 
             <View style={styles.summary}>
 
@@ -303,9 +276,6 @@ export default function BagScreen() {
 
           </ScrollView>
 
-
-          {/* BOTTOM CHECKOUT BAR */}
-
           <View style={styles.bottomBar}>
 
             <View>
@@ -343,24 +313,18 @@ export default function BagScreen() {
   );
 }
 
-
 const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#F8F7EA',
   },
-
-
-  /* HEADER */
 
   header: {
     height: 105,
     paddingTop: 48,
     paddingHorizontal: 20,
-
-    backgroundColor: '#7A3E22',
-
+    backgroundColor: '#456B42',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -370,9 +334,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-
-    backgroundColor: 'rgba(255,255,255,0.14)',
-
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -398,26 +360,19 @@ const styles = StyleSheet.create({
   countBadge: {
     minWidth: 23,
     height: 23,
-
     borderRadius: 12,
-
-    backgroundColor: '#E8A04D',
-
+    backgroundColor: '#EED58D',
     justifyContent: 'center',
     alignItems: 'center',
-
     marginLeft: 8,
     paddingHorizontal: 6,
   },
 
   countText: {
-    color: '#FFFFFF',
+    color: '#456B42',
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '900',
   },
-
-
-  /* CONTENT */
 
   content: {
     paddingHorizontal: 20,
@@ -429,19 +384,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
     marginBottom: 18,
   },
 
   pageHeading: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#35251E',
+    color: '#403630',
   },
 
   itemCount: {
     fontSize: 13,
-    color: '#8D776A',
+    color: '#81756D',
     marginTop: 4,
   },
 
@@ -449,50 +403,39 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-
-    backgroundColor: '#F1DCCB',
-
-    textAlign: 'center',
-    textAlignVertical: 'center',
-
-    fontSize: 22,
-    color: '#8B4B2C',
+    backgroundColor: '#E3EAD9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
-
-  /* PRODUCT CARD */
+  handmadeIconText: {
+    fontSize: 22,
+    color: '#456B42',
+  },
 
   productCard: {
     flexDirection: 'row',
-
-    backgroundColor: '#FFFFFF',
-
+    backgroundColor: '#FFFDF4',
     borderRadius: 20,
-
     padding: 12,
     marginBottom: 14,
-
     borderWidth: 1,
-    borderColor: '#EBDDD2',
-
-    shadowColor: '#5B321F',
+    borderColor: '#E6DDCF',
+    shadowColor: '#456B42',
     shadowOffset: {
       width: 0,
       height: 3,
     },
     shadowOpacity: 0.06,
     shadowRadius: 8,
-
     elevation: 2,
   },
 
   productImage: {
     width: 112,
     height: 122,
-
     borderRadius: 16,
-
-    backgroundColor: '#F2E7DE',
+    backgroundColor: '#E3EAD9',
   },
 
   productInfo: {
@@ -507,38 +450,31 @@ const styles = StyleSheet.create({
 
   productName: {
     flex: 1,
-
     fontSize: 16,
     fontWeight: '800',
-
-    color: '#35251E',
+    color: '#403630',
     lineHeight: 21,
   },
 
   deleteButton: {
     width: 30,
     height: 30,
-
     borderRadius: 15,
-
-    backgroundColor: '#F8EEE8',
-
+    backgroundColor: '#EEF2E8',
     justifyContent: 'center',
     alignItems: 'center',
-
     marginLeft: 6,
   },
 
   deleteIcon: {
     fontSize: 22,
-    color: '#9A6046',
+    color: '#66805F',
     lineHeight: 23,
   },
 
   artisan: {
     fontSize: 11,
-    color: '#9A867A',
-
+    color: '#81756D',
     marginTop: 5,
     lineHeight: 16,
   },
@@ -546,9 +482,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 18,
     fontWeight: '800',
-
-    color: '#8B4B2C',
-
+    color: '#456B42',
     marginTop: 7,
   },
 
@@ -556,31 +490,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-
     marginTop: 10,
   },
-
-
-  /* QUANTITY */
 
   quantityBox: {
     flexDirection: 'row',
     alignItems: 'center',
-
     borderWidth: 1,
-    borderColor: '#E5D4C8',
-
+    borderColor: '#C9D4BE',
     borderRadius: 10,
-
     overflow: 'hidden',
   },
 
   quantityButton: {
     width: 29,
     height: 29,
-
-    backgroundColor: '#F8F0E9',
-
+    backgroundColor: '#EAF0E3',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -588,38 +513,29 @@ const styles = StyleSheet.create({
   quantityButtonText: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#7A3E22',
+    color: '#456B42',
   },
 
   quantity: {
     minWidth: 32,
-
     textAlign: 'center',
-
     fontSize: 13,
     fontWeight: '800',
-    color: '#35251E',
+    color: '#403630',
   },
 
   itemTotal: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#35251E',
+    color: '#403630',
   },
-
-
-  /* DELIVERY */
 
   deliveryCard: {
     flexDirection: 'row',
     alignItems: 'center',
-
-    backgroundColor: '#F1E7D9',
-
+    backgroundColor: '#E3EAD9',
     borderRadius: 18,
-
     padding: 14,
-
     marginTop: 5,
     marginBottom: 18,
   },
@@ -627,14 +543,10 @@ const styles = StyleSheet.create({
   deliveryIcon: {
     width: 42,
     height: 42,
-
     borderRadius: 14,
-
-    backgroundColor: '#FFFFFF',
-
+    backgroundColor: '#FFFDF4',
     justifyContent: 'center',
     alignItems: 'center',
-
     marginRight: 12,
   },
 
@@ -649,107 +561,88 @@ const styles = StyleSheet.create({
   deliveryTitle: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#553426',
+    color: '#456B42',
   },
 
   deliveryText: {
     fontSize: 11,
-    color: '#80685B',
-
+    color: '#687360',
     marginTop: 3,
   },
 
   check: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#55845C',
+    color: '#456B42',
   },
 
-
-  /* SUMMARY */
-
   summary: {
-    backgroundColor: '#FFFFFF',
-
+    backgroundColor: '#FFFDF4',
     borderRadius: 20,
-
     padding: 19,
-
     borderWidth: 1,
-    borderColor: '#EBDDD2',
+    borderColor: '#E6DDCF',
   },
 
   summaryTitle: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#35251E',
-
+    color: '#403630',
     marginBottom: 18,
   },
 
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-
     marginBottom: 13,
   },
 
   summaryLabel: {
     fontSize: 13,
-    color: '#857267',
+    color: '#81756D',
   },
 
   summaryValue: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#46352D',
+    color: '#403630',
   },
 
   free: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#55845C',
+    color: '#456B42',
   },
 
   divider: {
     height: 1,
-
-    backgroundColor: '#EDE1D8',
-
+    backgroundColor: '#E6DDCF',
     marginVertical: 7,
   },
 
   totalLabel: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#35251E',
+    color: '#403630',
   },
 
   totalValue: {
     fontSize: 20,
     fontWeight: '900',
-    color: '#8B4B2C',
+    color: '#456B42',
   },
-
-
-  /* BOTTOM CHECKOUT */
 
   bottomBar: {
     position: 'absolute',
-
     bottom: 0,
     left: 0,
     right: 0,
-
     paddingHorizontal: 20,
     paddingTop: 13,
     paddingBottom: 24,
-
-    backgroundColor: '#FFFDF9',
-
+    backgroundColor: '#FFFDF4',
     borderTopWidth: 1,
-    borderTopColor: '#E9DDD4',
-
+    borderTopColor: '#E6DDCF',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -757,81 +650,61 @@ const styles = StyleSheet.create({
 
   totalSmall: {
     fontSize: 11,
-    color: '#927D70',
+    color: '#81756D',
   },
 
   bottomPrice: {
     fontSize: 20,
     fontWeight: '900',
-
-    color: '#7A3E22',
-
+    color: '#456B42',
     marginTop: 2,
   },
 
   checkoutButton: {
     height: 52,
-
     paddingHorizontal: 18,
-
     borderRadius: 15,
-
-    backgroundColor: '#7A3E22',
-
+    backgroundColor: '#456B42',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-
-    shadowColor: '#7A3E22',
+    shadowColor: '#456B42',
     shadowOffset: {
       width: 0,
       height: 4,
     },
     shadowOpacity: 0.2,
     shadowRadius: 7,
-
     elevation: 4,
   },
 
   checkoutText: {
     color: '#FFFFFF',
-
     fontSize: 14,
     fontWeight: '800',
   },
 
   checkoutArrow: {
     color: '#FFFFFF',
-
     fontSize: 20,
     fontWeight: '500',
-
     marginLeft: 8,
   },
 
-
-  /* EMPTY BAG */
-
   emptyContainer: {
     flex: 1,
-
     justifyContent: 'center',
     alignItems: 'center',
-
     paddingHorizontal: 40,
   },
 
   emptyIconCircle: {
     width: 105,
     height: 105,
-
     borderRadius: 52,
-
-    backgroundColor: '#F1E2D5',
-
+    backgroundColor: '#E3EAD9',
     justifyContent: 'center',
     alignItems: 'center',
-
     marginBottom: 24,
   },
 
@@ -842,34 +715,27 @@ const styles = StyleSheet.create({
   emptyTitle: {
     fontSize: 23,
     fontWeight: '900',
-
-    color: '#35251E',
+    color: '#403630',
   },
 
   emptyText: {
     fontSize: 14,
     lineHeight: 21,
-
-    color: '#8D776A',
-
+    color: '#81756D',
     textAlign: 'center',
-
     marginTop: 10,
     marginBottom: 26,
   },
 
   exploreButton: {
-    backgroundColor: '#7A3E22',
-
+    backgroundColor: '#456B42',
     paddingHorizontal: 30,
     paddingVertical: 15,
-
     borderRadius: 15,
   },
 
   exploreButtonText: {
     color: '#FFFFFF',
-
     fontSize: 15,
     fontWeight: '800',
   },
