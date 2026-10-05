@@ -39,6 +39,14 @@ By combining AI-assisted product cataloguing, image background removal, price su
 
 * Based on the category of product that homemaker is selling, the amount of loan required and the current situation of business (just started, already started, old business) suggest schemes of the Government that provide loans to help grow the business.
 
+### 🤝 Collaborate with fellow makers
+
+* Enable 'collaborate with other makers', to see near by makers, make collaborative products and create a cohesive business community.
+
+### 📈 Real time analytics
+
+* Get real time analytics of your business, key business insight and suggestion for further growth of your business.
+
   
 ### 🔐 Authentication and Data Management
 
