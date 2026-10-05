@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 
 import { useEffect, useState } from 'react';
+
 import { useCart } from '../../context/CartContext';
 
 import { supabase } from '../../services/supabase';
@@ -25,9 +26,23 @@ export default function ProductDetails() {
 
   const { addToCart } = useCart();
 
-  const [product, setProduct] = useState<any>(null);
-  const [artisan, setArtisan] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [product, setProduct] =
+    useState<any>(null);
+
+  const [artisan, setArtisan] =
+    useState<any>(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [liked, setLiked] =
+    useState(false);
+
+  const makerName =
+    artisan?.full_name &&
+    artisan.full_name !== 'Test Artisan'
+      ? artisan.full_name
+      : 'A Homegrown Maker';
 
   useEffect(() => {
     fetchProduct();
@@ -37,11 +52,12 @@ export default function ProductDetails() {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
+      const { data, error } =
+        await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
 
       if (error) {
         console.log(
@@ -61,7 +77,8 @@ export default function ProductDetails() {
       } = await supabase.rpc(
         'get_artisan_contact',
         {
-          artisan_uuid: data.artisan_id,
+          artisan_uuid:
+            data.artisan_id,
         }
       );
 
@@ -74,17 +91,21 @@ export default function ProductDetails() {
         artisanData &&
         artisanData.length > 0
       ) {
-        setArtisan(artisanData[0]);
+        setArtisan(
+          artisanData[0]
+        );
       }
     } catch (error) {
-      console.log('ERROR:', error);
+      console.log(
+        'ERROR:',
+        error
+      );
+
       setProduct(null);
     } finally {
       setLoading(false);
     }
   };
-
-  /* ADD TO BAG */
 
   const handleAddToBag = () => {
     addToCart(product);
@@ -106,87 +127,120 @@ export default function ProductDetails() {
     );
   };
 
-  /* BUY NOW */
-
   const handleBuyNow = () => {
     addToCart(product);
 
     router.push('/checkout');
   };
 
-  /* WHATSAPP */
-
   const handleWhatsApp = async () => {
     if (!artisan?.phone) {
       Alert.alert(
         'Contact unavailable',
-        'The artisan has not added a WhatsApp number yet.'
+        'The maker has not added a WhatsApp number yet.'
       );
 
       return;
     }
 
-    const phoneNumber = `91${artisan.phone}`;
+    const phoneNumber =
+      `91${artisan.phone}`;
 
-    const message = `Hi ${
-      artisan.full_name || 'Artisan'
-    }! I'm interested in your product "${product.product_name}" listed on ArtisanAI.`;
+    const whatsappName =
+      artisan?.full_name &&
+      artisan.full_name !== 'Test Artisan'
+        ? artisan.full_name
+        : 'there';
 
-    const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
-      message
-    )}`;
+    const message =
+      `Hi ${whatsappName}! I'm interested in your product "${product.product_name}" listed on GharSe.`;
+
+    const url =
+      `https://wa.me/${phoneNumber}?text=${encodeURIComponent(
+        message
+      )}`;
 
     const supported =
-      await Linking.canOpenURL(url);
+      await Linking.canOpenURL(
+        url
+      );
 
     if (supported) {
-      await Linking.openURL(url);
+      await Linking.openURL(
+        url
+      );
     } else {
       Alert.alert(
         'WhatsApp Not Available',
-        'Please install WhatsApp to contact the artisan.'
+        'Please install WhatsApp to contact the maker.'
       );
     }
   };
 
-  /* LOADING */
-
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View
+        style={
+          styles.loadingContainer
+        }
+      >
         <ActivityIndicator
           size="large"
-          color="#7A3E22"
+          color="#54245F"
         />
 
-        <Text style={styles.loadingText}>
-          Loading product...
+        <Text
+          style={
+            styles.loadingText
+          }
+        >
+          Finding this creation...
         </Text>
       </View>
     );
   }
 
-  /* PRODUCT NOT FOUND */
-
   if (!product) {
     return (
-      <View style={styles.errorContainer}>
-        <View style={styles.errorIcon}>
-          <Text style={styles.errorEmoji}>
+      <View
+        style={
+          styles.errorContainer
+        }
+      >
+        <View
+          style={
+            styles.errorIcon
+          }
+        >
+          <Text
+            style={
+              styles.errorEmoji
+            }
+          >
             🔎
           </Text>
         </View>
 
-        <Text style={styles.errorText}>
-          Product not found
+        <Text
+          style={
+            styles.errorText
+          }
+        >
+          Creation not found
         </Text>
 
         <Pressable
-          style={styles.errorBackButton}
-          onPress={() => router.back()}
+          style={
+            styles.errorBackButton
+          }
+          onPress={() =>
+            router.back()
+          }
         >
           <Text
-            style={styles.errorBackButtonText}
+            style={
+              styles.errorBackButtonText
+            }
           >
             Go Back
           </Text>
@@ -196,718 +250,1193 @@ export default function ProductDetails() {
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+    >
+      {/* TOP BAR */}
 
-      {/* HEADER */}
-
-      <View style={styles.header}>
+      <View
+        style={styles.topBar}
+      >
         <Pressable
-          onPress={() => router.back()}
-          style={styles.headerButton}
+          onPress={() =>
+            router.back()
+          }
+          style={
+            styles.circleButton
+          }
         >
-          <Text style={styles.backIcon}>
+          <Text
+            style={
+              styles.backIcon
+            }
+          >
             ‹
           </Text>
         </Pressable>
 
-        <Text style={styles.headerTitle}>
-          Product Details
+        <Text
+          style={
+            styles.topBarTitle
+          }
+        >
+          Creation
         </Text>
 
-        <Pressable
-          onPress={() => router.push('/bag')}
-          style={styles.headerButton}
+        <View
+          style={
+            styles.topBarRight
+          }
         >
-          <Text style={styles.headerBagIcon}>
-            🛍️
-          </Text>
-        </Pressable>
+          <Pressable
+            onPress={() =>
+              setLiked(!liked)
+            }
+            style={
+              styles.circleButton
+            }
+          >
+            <Text
+              style={
+                styles.heartIcon
+              }
+            >
+              {liked
+                ? '♥'
+                : '♡'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() =>
+              router.push('/bag')
+            }
+            style={
+              styles.circleButton
+            }
+          >
+            <Text
+              style={
+                styles.bagIcon
+              }
+            >
+              🛍
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 190,
-        }}
+        showsVerticalScrollIndicator={
+          false
+        }
+        contentContainerStyle={
+          styles.scrollContent
+        }
       >
-
         {/* PRODUCT IMAGE */}
 
-        <View style={styles.imageContainer}>
+        <View
+          style={
+            styles.imageWrapper
+          }
+        >
           <Image
             source={{
               uri: product.image_url,
             }}
-            style={styles.productImage}
+            style={
+              styles.productImage
+            }
           />
 
-          <View style={styles.handmadeBadge}>
-            <Text style={styles.handmadeBadgeText}>
-              ✨ Handmade
+          <View
+            style={
+              styles.madeBadge
+            }
+          >
+            <Text
+              style={
+                styles.madeBadgeText
+              }
+            >
+              ✨ Made at home
             </Text>
           </View>
         </View>
 
-        {/* PRODUCT INFORMATION */}
+        {/* MAIN CONTENT */}
 
-        <View style={styles.content}>
+        <View
+          style={styles.content}
+        >
+          {/* CATEGORY */}
 
           {product.category && (
-            <View style={styles.categoryBadge}>
-              <Text style={styles.categoryText}>
+            <View
+              style={
+                styles.categoryPill
+              }
+            >
+              <Text
+                style={
+                  styles.categoryPillText
+                }
+              >
                 {product.category}
               </Text>
             </View>
           )}
 
-          <Text style={styles.productName}>
+          {/* TITLE */}
+
+          <Text
+            style={
+              styles.productName
+            }
+          >
             {product.product_name}
           </Text>
 
-          <View style={styles.artisanRow}>
-            <Text style={styles.artisanDot}>
-              ●
-            </Text>
+          {/* MAKER */}
 
-            <Text style={styles.artisan}>
-              Crafted by Indian Artisan
+          <Pressable
+            style={
+              styles.makerMiniRow
+            }
+          >
+            <View
+              style={
+                styles.makerMiniAvatar
+              }
+            >
+              <Text
+                style={
+                  styles.makerMiniEmoji
+                }
+              >
+                👩🏻
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.makerMiniInfo
+              }
+            >
+              <Text
+                style={
+                  styles.makerMiniLabel
+                }
+              >
+                MADE BY
+              </Text>
+
+              <Text
+                style={
+                  styles.makerMiniName
+                }
+              >
+                {makerName}
+              </Text>
+            </View>
+
+            <Text
+              style={
+                styles.makerMiniArrow
+              }
+            >
+              ›
             </Text>
-          </View>
+          </Pressable>
 
           {/* PRICE */}
 
-          <View style={styles.priceSection}>
-            <Text style={styles.price}>
+          <View
+            style={
+              styles.priceRow
+            }
+          >
+            <Text
+              style={
+                styles.price
+              }
+            >
               ₹
               {Number(
                 product.selling_price
-              ).toLocaleString('en-IN')}
+              ).toLocaleString(
+                'en-IN'
+              )}
             </Text>
 
-            <View style={styles.fairPriceBadge}>
+            <View
+              style={
+                styles.trustPill
+              }
+            >
               <Text
-                style={styles.fairPriceText}
+                style={
+                  styles.trustPillText
+                }
               >
-                Fair Artisan Price
+                ✓ Direct from maker
               </Text>
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View
+            style={styles.divider}
+          />
 
           {/* ABOUT */}
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              About this product
-            </Text>
-
-            <Text style={styles.description}>
-              {product.description_en ||
-                'A beautiful handcrafted product made by an Indian artisan.'}
-            </Text>
-          </View>
-
-          {/* MATERIAL */}
-
-          {product.material && (
-            <View style={styles.infoSection}>
-              <View style={styles.infoIconBox}>
-                <Text style={styles.infoIcon}>
-                  🧵
-                </Text>
-              </View>
-
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
-                  Material
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {product.material}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* CATEGORY */}
-
-          {product.category && (
-            <View style={styles.infoSection}>
-              <View style={styles.infoIconBox}>
-                <Text style={styles.infoIcon}>
-                  🎨
-                </Text>
-              </View>
-
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>
-                  Art Form
-                </Text>
-
-                <Text style={styles.infoValue}>
-                  {product.category}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          {/* ARTISAN */}
-
-          <Text style={styles.sectionTitle}>
-            Meet the Artisan
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
+            About this creation
           </Text>
 
-          <View style={styles.artisanBox}>
+          <Text
+            style={
+              styles.description
+            }
+          >
+            {product.description_en ||
+              'A thoughtfully made creation from a home-based maker.'}
+          </Text>
 
-            <View style={styles.artisanAvatar}>
-              <Text style={styles.artisanEmoji}>
-                👩🏽‍🎨
+          {/* PRODUCT DETAILS */}
+
+          {(product.material ||
+            product.category) && (
+            <>
+              <Text
+                style={
+                  styles.sectionTitle
+                }
+              >
+                Details
               </Text>
-            </View>
 
-            <View style={styles.artisanInfo}>
+              <View
+                style={
+                  styles.detailsGrid
+                }
+              >
+                {product.material && (
+                  <View
+                    style={
+                      styles.detailCard
+                    }
+                  >
+                    <View
+                      style={
+                        styles.detailIcon
+                      }
+                    >
+                      <Text>
+                        🧵
+                      </Text>
+                    </View>
 
-              <Text style={styles.artisanLabel}>
-                ARTISAN
-              </Text>
+                    <Text
+                      style={
+                        styles.detailLabel
+                      }
+                    >
+                      Material
+                    </Text>
 
-              <Text style={styles.artisanName}>
-                {artisan?.full_name ||
-                  'Indian Artisan'}
+                    <Text
+                      style={
+                        styles.detailValue
+                      }
+                    >
+                      {
+                        product.material
+                      }
+                    </Text>
+                  </View>
+                )}
+
+                {product.category && (
+                  <View
+                    style={
+                      styles.detailCard
+                    }
+                  >
+                    <View
+                      style={
+                        styles.detailIcon
+                      }
+                    >
+                      <Text>
+                        ✨
+                      </Text>
+                    </View>
+
+                    <Text
+                      style={
+                        styles.detailLabel
+                      }
+                    >
+                      Category
+                    </Text>
+
+                    <Text
+                      style={
+                        styles.detailValue
+                      }
+                    >
+                      {
+                        product.category
+                      }
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </>
+          )}
+
+          {/* WHY YOU'LL LOVE IT */}
+
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
+            Why you'll love it
+          </Text>
+
+          <View
+            style={
+              styles.loveGrid
+            }
+          >
+            <View
+              style={
+                styles.loveCard
+              }
+            >
+              <Text
+                style={
+                  styles.loveEmoji
+                }
+              >
+                🏠
               </Text>
 
               <Text
-                style={styles.artisanLocation}
+                style={
+                  styles.loveTitle
+                }
               >
-                🇮🇳 Indian Handicrafts
+                Made at home
               </Text>
 
-            </View>
-
-            <Text style={styles.artisanArrow}>
-              ›
-            </Text>
-
-          </View>
-
-          {/* SUPPORT MESSAGE */}
-
-          <View style={styles.supportCard}>
-            <Text style={styles.supportEmoji}>
-              🤎
-            </Text>
-
-            <View style={styles.supportContent}>
-              <Text style={styles.supportTitle}>
-                Supporting Indian Artisans
-              </Text>
-
-              <Text style={styles.supportText}>
-                Your purchase directly supports
-                traditional artisans and their
-                communities.
+              <Text
+                style={
+                  styles.loveText
+                }
+              >
+                Created in a small home business.
               </Text>
             </View>
+
+            <View
+              style={
+                styles.loveCard
+              }
+            >
+              <Text
+                style={
+                  styles.loveEmoji
+                }
+              >
+                ❤️
+              </Text>
+
+              <Text
+                style={
+                  styles.loveTitle
+                }
+              >
+                Made with care
+              </Text>
+
+              <Text
+                style={
+                  styles.loveText
+                }
+              >
+                Every creation gets personal attention.
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.loveCard
+              }
+            >
+              <Text
+                style={
+                  styles.loveEmoji
+                }
+              >
+                🤝
+              </Text>
+
+              <Text
+                style={
+                  styles.loveTitle
+                }
+              >
+                Support a maker
+              </Text>
+
+              <Text
+                style={
+                  styles.loveText
+                }
+              >
+                Your purchase supports a home business.
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.loveCard
+              }
+            >
+              <Text
+                style={
+                  styles.loveEmoji
+                }
+              >
+                📦
+              </Text>
+
+              <Text
+                style={
+                  styles.loveTitle
+                }
+              >
+                Direct purchase
+              </Text>
+
+              <Text
+                style={
+                  styles.loveText
+                }
+              >
+                Shop directly from the person who made it.
+              </Text>
+            </View>
           </View>
 
-        </View>
+          {/* MEET THE MAKER */}
 
-      </ScrollView>
-
-      {/* BOTTOM SHOPPING BAR */}
-
-      <View style={styles.bottomBar}>
-
-        <Pressable
-          style={styles.addBagButton}
-          onPress={handleAddToBag}
-        >
-          <Text style={styles.addBagIcon}>
-            🛍️
+          <Text
+            style={
+              styles.sectionTitle
+            }
+          >
+            Meet the maker
           </Text>
 
-          <Text style={styles.addBagText}>
+          <View
+            style={
+              styles.makerCard
+            }
+          >
+            <View
+              style={
+                styles.makerAvatar
+              }
+            >
+              <Text
+                style={
+                  styles.makerAvatarEmoji
+                }
+              >
+                👩🏻
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.makerInfo
+              }
+            >
+              <Text
+                style={
+                  styles.makerLabel
+                }
+              >
+                HOME BUSINESS
+              </Text>
+
+              <Text
+                style={
+                  styles.makerName
+                }
+              >
+                {makerName}
+              </Text>
+
+              <Text
+                style={
+                  styles.makerLocation
+                }
+              >
+                📍 Home-based business
+              </Text>
+            </View>
+
+            <Pressable
+              onPress={
+                handleWhatsApp
+              }
+              style={
+                styles.contactButton
+              }
+            >
+              <Text
+                style={
+                  styles.contactButtonText
+                }
+              >
+                Chat
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* MESSAGE */}
+
+          <View
+            style={
+              styles.messageCard
+            }
+          >
+            <View
+              style={
+                styles.messageIcon
+              }
+            >
+              <Text>
+                🌷
+              </Text>
+            </View>
+
+            <View
+              style={
+                styles.messageContent
+              }
+            >
+              <Text
+                style={
+                  styles.messageTitle
+                }
+              >
+                Every purchase matters
+              </Text>
+
+              <Text
+                style={
+                  styles.messageText
+                }
+              >
+                When you buy from GharSe,
+                you're supporting someone's
+                passion, skills and small
+                home business.
+              </Text>
+            </View>
+          </View>
+
+          <View
+            style={
+              styles.bottomSpace
+            }
+          />
+        </View>
+      </ScrollView>
+
+      {/* BOTTOM ACTION BAR */}
+
+      <View
+        style={
+          styles.bottomBar
+        }
+      >
+        <View
+          style={
+            styles.bottomPriceBox
+          }
+        >
+          <Text
+            style={
+              styles.bottomPriceLabel
+            }
+          >
+            TOTAL
+          </Text>
+
+          <Text
+            style={
+              styles.bottomPrice
+            }
+          >
+            ₹
+            {Number(
+              product.selling_price
+            ).toLocaleString(
+              'en-IN'
+            )}
+          </Text>
+        </View>
+
+        <Pressable
+          style={
+            styles.addButton
+          }
+          onPress={
+            handleAddToBag
+          }
+        >
+          <Text
+            style={
+              styles.addButtonText
+            }
+          >
             Add to Bag
           </Text>
         </Pressable>
 
         <Pressable
-          style={styles.buyNowButton}
-          onPress={handleBuyNow}
+          style={
+            styles.buyButton
+          }
+          onPress={
+            handleBuyNow
+          }
         >
-          <Text style={styles.buyNowText}>
-            ⚡ Buy Now
+          <Text
+            style={
+              styles.buyButtonText
+            }
+          >
+            Buy Now
           </Text>
         </Pressable>
-
-        <Pressable
-          style={styles.whatsappButton}
-          onPress={handleWhatsApp}
-        >
-          <Text style={styles.whatsappText}>
-            💬
-          </Text>
-        </Pressable>
-
       </View>
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-
-  /* MAIN */
-
   container: {
     flex: 1,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#FFF8F0',
   },
-
-  /* HEADER */
-
-  header: {
-    height: 108,
-    paddingTop: 45,
-    paddingHorizontal: 16,
-    backgroundColor: '#7A3E22',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-
-  headerButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor:
-      'rgba(255,255,255,0.13)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  backIcon: {
-    color: '#FFFFFF',
-    fontSize: 34,
-    lineHeight: 35,
-    marginTop: -4,
-  },
-
-  headerTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-
-  headerBagIcon: {
-    fontSize: 18,
-  },
-
-  /* IMAGE */
-
-  imageContainer: {
-    position: 'relative',
-    backgroundColor: '#F0E5DB',
-  },
-
-  productImage: {
-    width: '100%',
-    height: 365,
-    backgroundColor: '#F0E5DB',
-  },
-
-  handmadeBadge: {
-    position: 'absolute',
-    bottom: 16,
-    left: 18,
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 15,
-  },
-
-  handmadeBadgeText: {
-    color: '#7A3E22',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-
-  /* CONTENT */
-
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 22,
-  },
-
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F0E1D5',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginBottom: 11,
-  },
-
-  categoryText: {
-    color: '#8A4E31',
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-
-  productName: {
-    fontSize: 29,
-    fontWeight: '900',
-    color: '#3B2B25',
-    lineHeight: 35,
-  },
-
-  artisanRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-
-  artisanDot: {
-    color: '#B86D42',
-    fontSize: 8,
-    marginRight: 6,
-  },
-
-  artisan: {
-    fontSize: 13,
-    color: '#8A7D74',
-  },
-
-  /* PRICE */
-
-  priceSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 17,
-  },
-
-  price: {
-    fontSize: 27,
-    fontWeight: '900',
-    color: '#7A3E22',
-  },
-
-  fairPriceBadge: {
-    backgroundColor: '#E5F1E6',
-    paddingHorizontal: 9,
-    paddingVertical: 5,
-    borderRadius: 8,
-    marginLeft: 10,
-  },
-
-  fairPriceText: {
-    color: '#4C7957',
-    fontSize: 9,
-    fontWeight: '800',
-  },
-
-  /* DIVIDER */
-
-  divider: {
-    height: 1,
-    backgroundColor: '#E7D9CF',
-    marginVertical: 23,
-  },
-
-  /* SECTIONS */
-
-  section: {
-    marginBottom: 8,
-  },
-
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#3B2B25',
-    marginBottom: 10,
-    marginTop: 17,
-  },
-
-  description: {
-    fontSize: 14,
-    lineHeight: 23,
-    color: '#71645C',
-  },
-
-  /* INFO */
-
-  infoSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 15,
-    padding: 13,
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#EDE1D8',
-  },
-
-  infoIconBox: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
-    backgroundColor: '#F5E8DE',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  infoIcon: {
-    fontSize: 19,
-  },
-
-  infoContent: {
-    marginLeft: 11,
-  },
-
-  infoLabel: {
-    fontSize: 10,
-    color: '#96887E',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-
-  infoValue: {
-    fontSize: 14,
-    color: '#44352D',
-    fontWeight: '700',
-    marginTop: 3,
-  },
-
-  /* ARTISAN */
-
-  artisanBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 17,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: '#EDE1D8',
-    marginTop: 3,
-  },
-
-  artisanAvatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
-    backgroundColor: '#F1E1D5',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  artisanEmoji: {
-    fontSize: 29,
-  },
-
-  artisanInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-
-  artisanLabel: {
-    fontSize: 9,
-    color: '#9A8A80',
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-
-  artisanName: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#3B2B25',
-    marginTop: 3,
-  },
-
-  artisanLocation: {
-    fontSize: 11,
-    color: '#897970',
-    marginTop: 3,
-  },
-
-  artisanArrow: {
-    color: '#9A8172',
-    fontSize: 26,
-  },
-
-  /* SUPPORT */
-
-  supportCard: {
-    flexDirection: 'row',
-    backgroundColor: '#F2E5D9',
-    borderRadius: 17,
-    padding: 14,
-    marginTop: 17,
-    alignItems: 'center',
-  },
-
-  supportEmoji: {
-    fontSize: 25,
-    marginRight: 11,
-  },
-
-  supportContent: {
-    flex: 1,
-  },
-
-  supportTitle: {
-    color: '#68402C',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-
-  supportText: {
-    color: '#8A6E5D',
-    fontSize: 10,
-    lineHeight: 15,
-    marginTop: 3,
-  },
-
-  /* BOTTOM BAR */
-
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 25,
-
-    backgroundColor: '#FFFFFF',
-
-    borderTopWidth: 1,
-    borderTopColor: '#E7DCD4',
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-  },
-
-  addBagButton: {
-    flex: 1,
-    height: 51,
-    borderRadius: 14,
-
-    backgroundColor: '#F4E7DC',
-
-    borderWidth: 1,
-    borderColor: '#8B4A2B',
-
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  addBagIcon: {
-    fontSize: 17,
-    marginRight: 6,
-  },
-
-  addBagText: {
-    color: '#7A3E22',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  buyNowButton: {
-    flex: 1,
-    height: 51,
-    borderRadius: 14,
-
-    backgroundColor: '#7A3E22',
-
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  buyNowText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
-  },
-
-  whatsappButton: {
-    width: 51,
-    height: 51,
-    borderRadius: 14,
-
-    backgroundColor: '#E8F3E9',
-
-    borderWidth: 1,
-    borderColor: '#BBD8BE',
-
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  whatsappText: {
-    fontSize: 20,
-  },
-
-  /* LOADING */
 
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FBF5ED',
+    justifyContent: 'center',
+    backgroundColor: '#FFF8F0',
   },
 
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#81736B',
+    marginTop: 14,
+    fontSize: 15,
+    color: '#54245F',
+    fontWeight: '600',
   },
-
-  /* ERROR */
 
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FBF5ED',
-    paddingHorizontal: 30,
+    justifyContent: 'center',
+    padding: 30,
+    backgroundColor: '#FFF8F0',
   },
 
   errorIcon: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#F0E1D5',
-    justifyContent: 'center',
+    backgroundColor: '#F4EEFF',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 18,
   },
 
   errorEmoji: {
-    fontSize: 32,
+    fontSize: 34,
   },
 
   errorText: {
-    fontSize: 19,
-    color: '#4B3A31',
+    fontSize: 20,
     fontWeight: '800',
+    color: '#29232D',
     marginBottom: 20,
   },
 
   errorBackButton: {
-    backgroundColor: '#7A3E22',
-    paddingHorizontal: 25,
+    backgroundColor: '#54245F',
+    paddingHorizontal: 28,
     paddingVertical: 13,
-    borderRadius: 12,
+    borderRadius: 14,
   },
 
   errorBackButtonText: {
     color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  topBar: {
+    height: 62,
+    paddingHorizontal: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFF8F0',
+  },
+
+  topBarTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#29232D',
+  },
+
+  topBarRight: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+
+  circleButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#F0E5DC',
+  },
+
+  backIcon: {
+    fontSize: 31,
+    lineHeight: 32,
+    color: '#54245F',
+    marginTop: -3,
+  },
+
+  heartIcon: {
+    fontSize: 22,
+    color: '#F47C6C',
+  },
+
+  bagIcon: {
+    fontSize: 19,
+  },
+
+  scrollContent: {
+    paddingBottom: 10,
+  },
+
+  imageWrapper: {
+    height: 360,
+    marginHorizontal: 16,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: '#F4EEFF',
+    position: 'relative',
+  },
+
+  productImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+
+  madeBadge: {
+    position: 'absolute',
+    left: 16,
+    bottom: 16,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+  },
+
+  madeBadgeText: {
+    color: '#54245F',
+    fontSize: 12,
     fontWeight: '800',
   },
 
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 22,
+  },
+
+  categoryPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#F4EEFF',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    marginBottom: 10,
+  },
+
+  categoryPillText: {
+    color: '#54245F',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  productName: {
+    fontSize: 29,
+    lineHeight: 35,
+    fontWeight: '900',
+    color: '#29232D',
+    marginBottom: 18,
+  },
+
+  makerMiniRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F0E5DC',
+  },
+
+  makerMiniAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FFE2D9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  makerMiniEmoji: {
+    fontSize: 22,
+  },
+
+  makerMiniInfo: {
+    flex: 1,
+    marginLeft: 11,
+  },
+
+  makerMiniLabel: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    color: '#9B8D99',
+    marginBottom: 2,
+  },
+
+  makerMiniName: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#29232D',
+  },
+
+  makerMiniArrow: {
+    fontSize: 25,
+    color: '#54245F',
+    marginRight: 4,
+  },
+
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+
+  price: {
+    fontSize: 27,
+    fontWeight: '900',
+    color: '#54245F',
+  },
+
+  trustPill: {
+    marginLeft: 12,
+    backgroundColor: '#E9F7F0',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+
+  trustPillText: {
+    color: '#317A59',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: '#EDE1D7',
+    marginVertical: 24,
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#29232D',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+
+  description: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: '#665B66',
+  },
+
+  detailsGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 18,
+  },
+
+  detailCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#F0E5DC',
+  },
+
+  detailIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#FFF1E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+
+  detailLabel: {
+    fontSize: 10,
+    color: '#9B8D99',
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+
+  detailValue: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#29232D',
+    fontWeight: '700',
+  },
+
+  loveGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+
+  loveCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 18,
+    padding: 15,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#F0E5DC',
+  },
+
+  loveEmoji: {
+    fontSize: 24,
+    marginBottom: 9,
+  },
+
+  loveTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#29232D',
+    marginBottom: 5,
+  },
+
+  loveText: {
+    fontSize: 11,
+    lineHeight: 17,
+    color: '#766B76',
+  },
+
+  makerCard: {
+    backgroundColor: '#54245F',
+    borderRadius: 22,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+
+  makerAvatar: {
+    width: 54,
+    height: 54,
+    borderRadius: 27,
+    backgroundColor: '#FFE2D9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  makerAvatarEmoji: {
+    fontSize: 27,
+  },
+
+  makerInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  makerLabel: {
+    color: '#DCCBE2',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+    marginBottom: 3,
+  },
+
+  makerName: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
+
+  makerLocation: {
+    color: '#E7DDEA',
+    fontSize: 11,
+  },
+
+  contactButton: {
+    backgroundColor: '#F47C6C',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 14,
+  },
+
+  contactButtonText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
+  messageCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFF0EA',
+    borderRadius: 20,
+    padding: 16,
+    marginTop: 8,
+  },
+
+  messageIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  messageContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  messageTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#54245F',
+    marginBottom: 5,
+  },
+
+  messageText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#6E5968',
+  },
+
+  bottomSpace: {
+    height: 25,
+  },
+
+  bottomBar: {
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EDE1D7',
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  bottomPriceBox: {
+    paddingHorizontal: 5,
+    minWidth: 65,
+  },
+
+  bottomPriceLabel: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#9B8D99',
+    letterSpacing: 1,
+  },
+
+  bottomPrice: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#29232D',
+    marginTop: 2,
+  },
+
+  addButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: '#54245F',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+
+  addButtonText: {
+    color: '#54245F',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+
+  buyButton: {
+    flex: 1,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: '#54245F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  buyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
 });

@@ -24,11 +24,6 @@ import { supabase } from '../services/supabase';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function AddProductScreen() {
-
-  // ==================================================
-  // STATES
-  // ==================================================
-
   const { language, setLanguage, t } = useLanguage();
 
   const [image, setImage] =
@@ -64,6 +59,9 @@ export default function AddProductScreen() {
   const [publishing, setPublishing] =
     useState(false);
 
+  const [descriptionLanguage, setDescriptionLanguage] =
+    useState<'en' | 'hi'>('en');
+
   const audioRecorder = useAudioRecorder(
     RecordingPresets.HIGH_QUALITY
   );
@@ -73,7 +71,6 @@ export default function AddProductScreen() {
   // ==================================================
 
   const pickImage = async () => {
-
     const result =
       await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
@@ -82,7 +79,6 @@ export default function AddProductScreen() {
       });
 
     if (!result.canceled) {
-
       const selectedImage =
         result.assets[0].uri;
 
@@ -98,12 +94,10 @@ export default function AddProductScreen() {
   // ==================================================
 
   const takePhoto = async () => {
-
     const permission =
       await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
-
       alert(
         'Camera permission is required.'
       );
@@ -118,7 +112,6 @@ export default function AddProductScreen() {
       });
 
     if (!result.canceled) {
-
       const selectedImage =
         result.assets[0].uri;
 
@@ -134,13 +127,11 @@ export default function AddProductScreen() {
   // ==================================================
 
   const enhanceImage = async () => {
-
     console.log(
       '🔥 ENHANCE BUTTON PRESSED'
     );
 
     if (!image) {
-
       Alert.alert(
         'No image',
         'Please select or take a product photo first.'
@@ -150,7 +141,6 @@ export default function AddProductScreen() {
     }
 
     try {
-
       setLoadingMessage(
         'Enhancing image...'
       );
@@ -202,7 +192,6 @@ export default function AddProductScreen() {
       );
 
       if (!response.ok) {
-
         throw new Error(
           `Server error ${response.status}: ${responseText}`
         );
@@ -212,14 +201,12 @@ export default function AddProductScreen() {
         JSON.parse(responseText);
 
       if (data.error) {
-
         throw new Error(
           data.error
         );
       }
 
       if (!data.image) {
-
         throw new Error(
           'Server did not return an enhanced image.'
         );
@@ -237,7 +224,6 @@ export default function AddProductScreen() {
       );
 
     } catch (error: any) {
-
       console.log(
         'IMAGE ENHANCEMENT ERROR:',
         error
@@ -258,12 +244,10 @@ export default function AddProductScreen() {
   // ==================================================
 
   const startRecording = async () => {
-
     const permission =
       await AudioModule.requestRecordingPermissionsAsync();
 
     if (!permission.granted) {
-
       alert(
         'Microphone permission is required.'
       );
@@ -272,7 +256,6 @@ export default function AddProductScreen() {
     }
 
     try {
-
       await audioRecorder.prepareToRecordAsync();
 
       audioRecorder.record();
@@ -284,7 +267,6 @@ export default function AddProductScreen() {
       );
 
     } catch (error) {
-
       console.log(
         'Recording error:',
         error
@@ -301,14 +283,11 @@ export default function AddProductScreen() {
   // ==================================================
 
   const stopRecording = async () => {
-
     if (!isRecording) {
-
       return;
     }
 
     try {
-
       await audioRecorder.stop();
 
       setIsRecording(false);
@@ -317,7 +296,6 @@ export default function AddProductScreen() {
         audioRecorder.uri;
 
       if (uri) {
-
         setAudioUri(uri);
 
         console.log(
@@ -331,7 +309,6 @@ export default function AddProductScreen() {
       );
 
     } catch (error) {
-
       console.log(
         'Stop recording error:',
         error
@@ -348,27 +325,23 @@ export default function AddProductScreen() {
   const getSuggestedPrice = async (
     catalogData: any
   ) => {
-
     console.log(
       '🔥 PRICE FUNCTION CALLED'
     );
 
     if (!originalImage) {
-
       throw new Error(
         'Product image is missing.'
       );
     }
 
     if (!materialCost) {
-
       throw new Error(
         'Please enter the material cost.'
       );
     }
 
     try {
-
       const formData =
         new FormData();
 
@@ -413,7 +386,6 @@ export default function AddProductScreen() {
         await response.text();
 
       if (!response.ok) {
-
         throw new Error(
           `Pricing server error ${response.status}: ${responseText}`
         );
@@ -427,7 +399,6 @@ export default function AddProductScreen() {
       return data;
 
     } catch (error: any) {
-
       console.log(
         'PRICE GENERATION ERROR:',
         error
@@ -442,9 +413,7 @@ export default function AddProductScreen() {
   // ==================================================
 
   const transcribeAudio = async () => {
-
     if (!image) {
-
       Alert.alert(
         'No image',
         'Please add a product image first.'
@@ -454,7 +423,6 @@ export default function AddProductScreen() {
     }
 
     if (!audioUri) {
-
       Alert.alert(
         'No recording',
         'Please record your product description first.'
@@ -464,7 +432,6 @@ export default function AddProductScreen() {
     }
 
     if (!materialCost) {
-
       Alert.alert(
         'Material Cost Required',
         'Please enter the material cost.'
@@ -474,7 +441,6 @@ export default function AddProductScreen() {
     }
 
     try {
-
       setLoadingMessage(
         'Generating catalog...'
       );
@@ -506,7 +472,6 @@ export default function AddProductScreen() {
       if (
         transcriptionResponse.data.error
       ) {
-
         throw new Error(
           transcriptionResponse.data.error
         );
@@ -526,7 +491,6 @@ export default function AddProductScreen() {
       if (
         catalogResponse.data.error
       ) {
-
         throw new Error(
           catalogResponse.data.error
         );
@@ -547,6 +511,8 @@ export default function AddProductScreen() {
       setCatalog(parsedCatalog);
       setShowCatalog(true);
 
+      setDescriptionLanguage('en');
+
       const generatedPrice =
         await getSuggestedPrice(
           parsedCatalog
@@ -560,7 +526,6 @@ export default function AddProductScreen() {
       setLoadingMessage('');
 
     } catch (error: any) {
-
       console.log(
         'CATALOG / PRICE GENERATION ERROR:',
         error
@@ -578,13 +543,64 @@ export default function AddProductScreen() {
   };
 
   // ==================================================
+  // DESCRIPTION LANGUAGE
+  // ==================================================
+
+  const switchDescriptionLanguage = () => {
+    if (!catalog) {
+      Alert.alert(
+        'Generate your listing first',
+        'Please generate your AI catalog before switching the description language.'
+      );
+
+      return;
+    }
+
+    if (
+      descriptionLanguage === 'en' &&
+      !catalog.hindi_description
+    ) {
+      Alert.alert(
+        'Hindi description unavailable',
+        'The AI catalog did not generate a Hindi description.'
+      );
+
+      return;
+    }
+
+    setDescriptionLanguage(
+      descriptionLanguage === 'en'
+        ? 'hi'
+        : 'en'
+    );
+  };
+
+  const selectDescriptionLanguage = (
+    selectedLanguage: 'en' | 'hi'
+  ) => {
+    if (
+      selectedLanguage === 'hi' &&
+      !catalog?.hindi_description
+    ) {
+      Alert.alert(
+        'Hindi unavailable',
+        'The AI catalog did not generate a Hindi description.'
+      );
+
+      return;
+    }
+
+    setDescriptionLanguage(
+      selectedLanguage
+    );
+  };
+
+  // ==================================================
   // PUBLISH PRODUCT
   // ==================================================
 
   const publishProduct = async () => {
-
     if (!catalog) {
-
       Alert.alert(
         'Missing catalog',
         'Please generate the product catalog first.'
@@ -594,7 +610,6 @@ export default function AddProductScreen() {
     }
 
     if (!sellingPrice) {
-
       Alert.alert(
         'Selling price required',
         'Please enter the final selling price.'
@@ -610,7 +625,6 @@ export default function AddProductScreen() {
       isNaN(finalPrice) ||
       finalPrice <= 0
     ) {
-
       Alert.alert(
         'Invalid price',
         'Please enter a valid selling price.'
@@ -620,7 +634,6 @@ export default function AddProductScreen() {
     }
 
     if (!originalImage) {
-
       Alert.alert(
         'Missing image',
         'Please add a product image first.'
@@ -630,7 +643,6 @@ export default function AddProductScreen() {
     }
 
     try {
-
       setPublishing(true);
 
       const {
@@ -645,7 +657,6 @@ export default function AddProductScreen() {
         userError ||
         !user
       ) {
-
         Alert.alert(
           'Login required',
           'Please log in again before publishing.'
@@ -661,7 +672,6 @@ export default function AddProductScreen() {
         priceData &&
         typeof priceData === 'object'
       ) {
-
         aiMinPrice =
           priceData.minPrice ??
           priceData.min_price ??
@@ -716,7 +726,6 @@ export default function AddProductScreen() {
           });
 
       if (error) {
-
         Alert.alert(
           'Publish failed',
           error.message
@@ -731,7 +740,6 @@ export default function AddProductScreen() {
       );
 
     } catch (error: any) {
-
       Alert.alert(
         'Error',
         error?.message ||
@@ -739,7 +747,6 @@ export default function AddProductScreen() {
       );
 
     } finally {
-
       setPublishing(false);
     }
   };
@@ -754,6 +761,10 @@ export default function AddProductScreen() {
       {/* LANGUAGE SWITCH */}
 
       <View style={styles.languageSwitch}>
+
+        <Text style={styles.languageSwitchLabel}>
+          Language
+        </Text>
 
         <Pressable
           onPress={() => setLanguage('en')}
@@ -770,7 +781,7 @@ export default function AddProductScreen() {
                 styles.selectedLanguageText,
             ]}
           >
-            English
+            🇬🇧 English
           </Text>
         </Pressable>
 
@@ -789,7 +800,7 @@ export default function AddProductScreen() {
                 styles.selectedLanguageText,
             ]}
           >
-            हिंदी
+            🇮🇳 हिंदी
           </Text>
         </Pressable>
 
@@ -802,9 +813,7 @@ export default function AddProductScreen() {
         }
       >
 
-        {/* ==========================================
-            HEADER
-        ========================================== */}
+        {/* HEADER */}
 
         <View style={styles.header}>
 
@@ -824,9 +833,7 @@ export default function AddProductScreen() {
 
         </View>
 
-        {/* ==========================================
-            STEP INDICATOR
-        ========================================== */}
+        {/* STEP INDICATOR */}
 
         <View style={styles.progressCard}>
 
@@ -894,9 +901,7 @@ export default function AddProductScreen() {
 
         </View>
 
-        {/* ==========================================
-            PHOTO STUDIO
-        ========================================== */}
+        {/* PHOTO STUDIO */}
 
         <View style={styles.sectionHeader}>
 
@@ -1031,9 +1036,7 @@ export default function AddProductScreen() {
 
         </View>
 
-        {/* ==========================================
-            VOICE LISTING
-        ========================================== */}
+        {/* VOICE LISTING */}
 
         <View style={styles.sectionHeader}>
 
@@ -1119,9 +1122,7 @@ export default function AddProductScreen() {
 
         </View>
 
-        {/* ==========================================
-            MATERIAL COST
-        ========================================== */}
+        {/* MATERIAL COST */}
 
         <View style={styles.sectionHeader}>
 
@@ -1170,9 +1171,7 @@ export default function AddProductScreen() {
 
         </View>
 
-        {/* ==========================================
-            AI GENERATED CATALOG
-        ========================================== */}
+        {/* AI GENERATED CATALOG */}
 
         {showCatalog && catalog && (
 
@@ -1279,35 +1278,90 @@ export default function AddProductScreen() {
                 placeholderTextColor="#A89484"
               />
 
-              {/* ENGLISH DESCRIPTION */}
+              {/* DESCRIPTION LANGUAGE */}
 
-              <Text style={styles.label}>
-                {t.englishDescriptionLabel}
-              </Text>
+              <View style={styles.descriptionHeaderRow}>
 
-              <TextInput
-                style={[
-                  styles.editInput,
-                  styles.descriptionInput,
-                ]}
-                value={catalog.description || ''}
-                onChangeText={(text) =>
-                  setCatalog({
-                    ...catalog,
-                    description: text,
-                  })
-                }
-                placeholder="Product description"
-                placeholderTextColor="#A89484"
-                multiline
-                textAlignVertical="top"
-              />
+                <View style={{ flex: 1 }}>
 
-              {/* HINDI DESCRIPTION */}
+                  <Text style={styles.label}>
+                    Product Description
+                  </Text>
 
-              <Text style={styles.label}>
-                {t.hindiDescriptionLabel}
-              </Text>
+                  <Text style={styles.descriptionHelper}>
+                    Make your listing understandable to more buyers
+                  </Text>
+
+                </View>
+
+                <Pressable
+                  style={styles.translateButton}
+                  onPress={switchDescriptionLanguage}
+                >
+
+                  <Text style={styles.translateButtonText}>
+                    {descriptionLanguage === 'en'
+                      ? '🇮🇳 Translate to Hindi'
+                      : '🇬🇧 Show English'}
+                  </Text>
+
+                </Pressable>
+
+              </View>
+
+              {/* LANGUAGE TABS */}
+
+              <View style={styles.descriptionLanguageTabs}>
+
+                <Pressable
+                  onPress={() =>
+                    selectDescriptionLanguage('en')
+                  }
+                  style={[
+                    styles.descriptionLanguageTab,
+                    descriptionLanguage === 'en' &&
+                      styles.descriptionLanguageTabActive,
+                  ]}
+                >
+
+                  <Text
+                    style={[
+                      styles.descriptionLanguageText,
+                      descriptionLanguage === 'en' &&
+                        styles.descriptionLanguageTextActive,
+                    ]}
+                  >
+                    🇬🇧 English
+                  </Text>
+
+                </Pressable>
+
+                <Pressable
+                  onPress={() =>
+                    selectDescriptionLanguage('hi')
+                  }
+                  style={[
+                    styles.descriptionLanguageTab,
+                    descriptionLanguage === 'hi' &&
+                      styles.descriptionLanguageTabActive,
+                  ]}
+                >
+
+                  <Text
+                    style={[
+                      styles.descriptionLanguageText,
+                      descriptionLanguage === 'hi' &&
+                        styles.descriptionLanguageTextActive,
+                    ]}
+                  >
+                    🇮🇳 हिंदी
+                  </Text>
+
+                </Pressable>
+
+              </View>
+
+              {/* DESCRIPTION */}
 
               <TextInput
                 style={[
@@ -1315,15 +1369,36 @@ export default function AddProductScreen() {
                   styles.descriptionInput,
                 ]}
                 value={
-                  catalog.hindi_description || ''
+                  descriptionLanguage === 'en'
+                    ? catalog.description || ''
+                    : catalog.hindi_description || ''
                 }
-                onChangeText={(text) =>
-                  setCatalog({
-                    ...catalog,
-                    hindi_description: text,
-                  })
+                onChangeText={(text) => {
+
+                  if (
+                    descriptionLanguage === 'en'
+                  ) {
+
+                    setCatalog({
+                      ...catalog,
+                      description: text,
+                    });
+
+                  } else {
+
+                    setCatalog({
+                      ...catalog,
+                      hindi_description: text,
+                    });
+
+                  }
+
+                }}
+                placeholder={
+                  descriptionLanguage === 'en'
+                    ? 'Write your product description...'
+                    : 'हिंदी में अपने उत्पाद का विवरण लिखें...'
                 }
-                placeholder="Hindi description"
                 placeholderTextColor="#A89484"
                 multiline
                 textAlignVertical="top"
@@ -1464,9 +1539,7 @@ export default function AddProductScreen() {
 
       </ScrollView>
 
-      {/* ==========================================
-          BOTTOM ACTION
-      ========================================== */}
+      {/* BOTTOM ACTION */}
 
       {!showCatalog && (
 
@@ -1528,9 +1601,7 @@ export default function AddProductScreen() {
 
       )}
 
-      {/* ==========================================
-          LOADING POPUP
-      ========================================== */}
+      {/* LOADING POPUP */}
 
       {loadingMessage !== '' && (
 
@@ -1573,7 +1644,6 @@ export default function AddProductScreen() {
   );
 }
 
-
 // ==================================================
 // STYLES
 // ==================================================
@@ -1582,12 +1652,12 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#F8F3E8',
   },
 
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 70,
+    paddingTop: 78,
     paddingBottom: 145,
   },
 
@@ -1603,7 +1673,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: '#F0D8C7',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -1616,13 +1686,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 30,
     fontWeight: '800',
-    color: '#3D2115',
+    color: '#3F5F3A',
     letterSpacing: -0.5,
   },
 
   subtitle: {
     fontSize: 14,
-    color: '#806B5D',
+    color: '#756B62',
     marginTop: 7,
     lineHeight: 21,
   },
@@ -1636,25 +1706,35 @@ const styles = StyleSheet.create({
     top: 18,
     right: 20,
     flexDirection: 'row',
-    backgroundColor: '#F0E2D6',
-    borderRadius: 22,
+    alignItems: 'center',
+    backgroundColor: '#EEF2E8',
+    borderRadius: 24,
     padding: 4,
     zIndex: 10,
+    borderWidth: 1,
+    borderColor: '#D8DDCE',
+  },
+
+  languageSwitchLabel: {
+    fontSize: 9,
+    color: '#4F7048',
+    fontWeight: '700',
+    marginHorizontal: 7,
   },
 
   languageButton: {
     paddingVertical: 7,
-    paddingHorizontal: 13,
-    borderRadius: 18,
+    paddingHorizontal: 10,
+    borderRadius: 19,
   },
 
   selectedLanguage: {
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
   },
 
   languageText: {
-    fontSize: 11,
-    color: '#745E51',
+    fontSize: 10,
+    color: '#4F7048',
     fontWeight: '700',
   },
 
@@ -1672,7 +1752,7 @@ const styles = StyleSheet.create({
     padding: 17,
     marginBottom: 28,
     borderWidth: 1,
-    borderColor: '#E9DCD0',
+    borderColor: '#D8DDCE',
     flexDirection: 'row',
     alignItems: 'center',
     position: 'relative',
@@ -1691,7 +1771,7 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -1743,7 +1823,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 19,
     fontWeight: '800',
-    color: '#3D2115',
+    color: '#3F5F3A',
   },
 
   sectionSubtitle: {
@@ -1754,7 +1834,7 @@ const styles = StyleSheet.create({
   },
 
   requiredBadge: {
-    backgroundColor: '#F3E1D3',
+    backgroundColor: '#FFF0D0',
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: 12,
@@ -1763,11 +1843,11 @@ const styles = StyleSheet.create({
   requiredText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#8A4528',
+    color: '#9A6910',
   },
 
   aiBadge: {
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     paddingHorizontal: 11,
     paddingVertical: 6,
     borderRadius: 12,
@@ -1789,8 +1869,8 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 27,
     borderWidth: 1,
-    borderColor: '#E9DCD0',
-    shadowColor: '#6D4632',
+    borderColor: '#D8DDCE',
+    shadowColor: '#3F5F3A',
     shadowOpacity: 0.06,
     shadowRadius: 10,
     shadowOffset: {
@@ -1803,9 +1883,9 @@ const styles = StyleSheet.create({
   emptyPhotoArea: {
     height: 225,
     borderRadius: 17,
-    backgroundColor: '#F8EFE7',
+    backgroundColor: '#F3F5EC',
     borderWidth: 1.5,
-    borderColor: '#E6D2C2',
+    borderColor: '#C9D4C2',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1816,7 +1896,7 @@ const styles = StyleSheet.create({
     width: 68,
     height: 68,
     borderRadius: 34,
-    backgroundColor: '#EBD3C1',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
@@ -1829,7 +1909,7 @@ const styles = StyleSheet.create({
   imageTitle: {
     fontSize: 17,
     fontWeight: '800',
-    color: '#4A2A1B',
+    color: '#3F5F3A',
   },
 
   imageSubtitle: {
@@ -1851,14 +1931,14 @@ const styles = StyleSheet.create({
     height: 245,
     borderRadius: 17,
     resizeMode: 'cover',
-    backgroundColor: '#F3EAE3',
+    backgroundColor: '#F1F3EA',
   },
 
   enhancedBadge: {
     position: 'absolute',
     top: 12,
     left: 12,
-    backgroundColor: 'rgba(61,33,21,0.88)',
+    backgroundColor: 'rgba(84,36,95,0.9)',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 14,
@@ -1883,7 +1963,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -1904,9 +1984,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#F7EEE7',
+    backgroundColor: '#F3F5EC',
     borderWidth: 1,
-    borderColor: '#DFCABC',
+    borderColor: '#C9D4C2',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -1918,7 +1998,7 @@ const styles = StyleSheet.create({
   },
 
   secondaryPhotoText: {
-    color: '#6D422C',
+    color: '#3F5F3A',
     fontSize: 12,
     fontWeight: '800',
   },
@@ -1929,7 +2009,7 @@ const styles = StyleSheet.create({
 
   enhanceButton: {
     marginTop: 11,
-    backgroundColor: '#F2E5DA',
+    backgroundColor: '#EEF2E8',
     borderRadius: 15,
     padding: 14,
     flexDirection: 'row',
@@ -1946,20 +2026,20 @@ const styles = StyleSheet.create({
   },
 
   enhanceTitle: {
-    color: '#5A301F',
+    color: '#3F5F3A',
     fontSize: 13,
     fontWeight: '800',
   },
 
   enhanceSubtitle: {
-    color: '#8C7465',
+    color: '#756B62',
     fontSize: 10,
     marginTop: 3,
   },
 
   arrow: {
     fontSize: 21,
-    color: '#7A3E22',
+    color: '#3F5F3A',
     fontWeight: '700',
   },
 
@@ -1973,7 +2053,7 @@ const styles = StyleSheet.create({
     padding: 17,
     marginBottom: 27,
     borderWidth: 1,
-    borderColor: '#E9DCD0',
+    borderColor: '#D8DDCE',
   },
 
   voiceTop: {
@@ -1985,7 +2065,7 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#F2E2D6',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2002,7 +2082,7 @@ const styles = StyleSheet.create({
   voiceTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#4A2A1B',
+    color: '#3F5F3A',
   },
 
   voiceSubtitle: {
@@ -2014,7 +2094,7 @@ const styles = StyleSheet.create({
 
   voiceDivider: {
     height: 1,
-    backgroundColor: '#EFE5DD',
+    backgroundColor: '#E1E6DB',
     marginVertical: 16,
   },
 
@@ -2025,7 +2105,7 @@ const styles = StyleSheet.create({
 
   voiceHintTitle: {
     fontSize: 12,
-    color: '#5C3A29',
+    color: '#3F5F3A',
     fontWeight: '700',
   },
 
@@ -2041,14 +2121,14 @@ const styles = StyleSheet.create({
     width: 57,
     height: 57,
     borderRadius: 29,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 'auto',
   },
 
   bigMicRecording: {
-    backgroundColor: '#A64035',
+    backgroundColor: '#C94F48',
   },
 
   bigMicText: {
@@ -2066,13 +2146,13 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 27,
     borderWidth: 1,
-    borderColor: '#E9DCD0',
+    borderColor: '#D8DDCE',
   },
 
   inputLabel: {
     fontSize: 14,
     fontWeight: '800',
-    color: '#4A2A1B',
+    color: '#3F5F3A',
     marginBottom: 5,
   },
 
@@ -2086,9 +2166,9 @@ const styles = StyleSheet.create({
   costInputWrapper: {
     height: 52,
     borderRadius: 14,
-    backgroundColor: '#FAF5F0',
+    backgroundColor: '#F8FAF4',
     borderWidth: 1,
-    borderColor: '#E1D1C4',
+    borderColor: '#C9D4C2',
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -2096,7 +2176,7 @@ const styles = StyleSheet.create({
   costRupee: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#7A3E22',
+    color: '#3F5F3A',
     marginLeft: 15,
   },
 
@@ -2117,7 +2197,7 @@ const styles = StyleSheet.create({
     padding: 18,
     marginBottom: 27,
     borderWidth: 1,
-    borderColor: '#E5D5C9',
+    borderColor: '#D8DDCE',
   },
 
   catalogTop: {
@@ -2130,7 +2210,7 @@ const styles = StyleSheet.create({
     width: 43,
     height: 43,
     borderRadius: 14,
-    backgroundColor: '#F2E0D3',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
@@ -2139,7 +2219,7 @@ const styles = StyleSheet.create({
   catalogHeading: {
     fontSize: 18,
     fontWeight: '800',
-    color: '#402418',
+    color: '#3F5F3A',
   },
 
   editHint: {
@@ -2152,7 +2232,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#7A3E22',
+    color: '#3F5F3A',
     marginTop: 15,
     marginBottom: 6,
     textTransform: 'uppercase',
@@ -2161,18 +2241,85 @@ const styles = StyleSheet.create({
 
   editInput: {
     borderWidth: 1,
-    borderColor: '#DFD0C4',
+    borderColor: '#C9D4C2',
     borderRadius: 13,
     paddingHorizontal: 13,
     paddingVertical: 12,
     fontSize: 14,
-    color: '#402719',
-    backgroundColor: '#FCF9F6',
+    color: '#3F302B',
+    backgroundColor: '#F8FAF4',
   },
 
   descriptionInput: {
     minHeight: 120,
     lineHeight: 21,
+  },
+
+  descriptionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    marginBottom: 8,
+  },
+
+  descriptionHelper: {
+    fontSize: 10,
+    color: '#756B62',
+    marginTop: 3,
+    maxWidth: 210,
+  },
+
+  translateButton: {
+    backgroundColor: '#3F5F3A',
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+
+  translateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  descriptionLanguageTabs: {
+    flexDirection: 'row',
+    backgroundColor: '#EEF2E8',
+    borderRadius: 13,
+    padding: 4,
+    marginBottom: 9,
+  },
+
+  descriptionLanguageTab: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  descriptionLanguageTabActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#3F5F3A',
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    elevation: 2,
+  },
+
+  descriptionLanguageText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#6F8068',
+  },
+
+  descriptionLanguageTextActive: {
+    color: '#3F5F3A',
   },
 
   tagsContainer: {
@@ -2182,7 +2329,7 @@ const styles = StyleSheet.create({
   },
 
   tag: {
-    backgroundColor: '#F2E1D5',
+    backgroundColor: '#EEF2E8',
     paddingHorizontal: 10,
     paddingVertical: 7,
     borderRadius: 20,
@@ -2191,7 +2338,7 @@ const styles = StyleSheet.create({
   },
 
   tagText: {
-    color: '#7A3E22',
+    color: '#3F5F3A',
     fontSize: 11,
     fontWeight: '700',
   },
@@ -2201,12 +2348,12 @@ const styles = StyleSheet.create({
   // ==================================================
 
   priceCard: {
-    backgroundColor: '#F7EEE7',
+    backgroundColor: '#F3F5EC',
     borderRadius: 17,
     padding: 16,
     marginTop: 22,
     borderWidth: 1,
-    borderColor: '#E5CFBF',
+    borderColor: '#C9D4C2',
   },
 
   priceHeaderRow: {
@@ -2218,7 +2365,7 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: 21,
-    backgroundColor: '#E5C9B5',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 11,
@@ -2227,18 +2374,18 @@ const styles = StyleSheet.create({
   priceHeading: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#4A291A',
+    color: '#3F5F3A',
   },
 
   priceSmallText: {
     fontSize: 9,
-    color: '#8E796B',
+    color: '#756B62',
     marginTop: 3,
   },
 
   priceResult: {
     fontSize: 13,
-    color: '#604536',
+    color: '#3F302B',
     lineHeight: 20,
     marginTop: 13,
   },
@@ -2248,23 +2395,23 @@ const styles = StyleSheet.create({
   // ==================================================
 
   finalPriceBox: {
-    backgroundColor: '#FFF9F4',
+    backgroundColor: '#F8FAF4',
     borderRadius: 17,
     padding: 16,
     marginTop: 18,
     borderWidth: 1,
-    borderColor: '#E7D5C8',
+    borderColor: '#C9D4C2',
   },
 
   finalPriceHeading: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#482719',
+    color: '#3F5F3A',
   },
 
   finalPriceSubtitle: {
     fontSize: 10,
-    color: '#8C7769',
+    color: '#756B62',
     marginTop: 5,
     marginBottom: 12,
   },
@@ -2275,14 +2422,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#DCC9BA',
+    borderColor: '#C9D4C2',
     borderRadius: 13,
   },
 
   rupee: {
     fontSize: 19,
     fontWeight: '800',
-    color: '#7A3E22',
+    color: '#3F5F3A',
     marginLeft: 15,
   },
 
@@ -2290,7 +2437,8 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 10,
     fontSize: 16,
-    color: '#402719',
+    color: '#3F302B',
+    fontWeight: '600',
   },
 
   // ==================================================
@@ -2298,7 +2446,7 @@ const styles = StyleSheet.create({
   // ==================================================
 
   publishButton: {
-    backgroundColor: '#2E6B3E',
+    backgroundColor: '#3F5F3A',
     paddingVertical: 17,
     borderRadius: 15,
     alignItems: 'center',
@@ -2324,16 +2472,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: '#FBF5ED',
+    backgroundColor: '#F8F3E8',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 22,
     borderTopWidth: 1,
-    borderTopColor: '#E5D8CC',
+    borderTopColor: '#D8DDCE',
   },
 
   continueButton: {
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     minHeight: 62,
     borderRadius: 17,
     paddingHorizontal: 19,
@@ -2343,7 +2491,7 @@ const styles = StyleSheet.create({
   },
 
   continueSmallText: {
-    color: '#E9CDBB',
+    color: '#DCE7D5',
     fontSize: 10,
     fontWeight: '700',
     marginBottom: 2,
@@ -2361,7 +2509,7 @@ const styles = StyleSheet.create({
   },
 
   regenerateButton: {
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     paddingVertical: 17,
     borderRadius: 16,
     alignItems: 'center',
@@ -2383,7 +2531,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(46, 28, 19, 0.52)',
+    backgroundColor: 'rgba(43, 58, 40, 0.52)',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 999,
@@ -2402,7 +2550,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: '#F0DCCC',
+    backgroundColor: '#DCE7D5',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 15,
@@ -2415,13 +2563,13 @@ const styles = StyleSheet.create({
   loadingTitle: {
     fontSize: 19,
     fontWeight: '800',
-    color: '#3D2115',
+    color: '#3F5F3A',
     textAlign: 'center',
   },
 
   loadingSubtitle: {
     fontSize: 12,
-    color: '#897367',
+    color: '#756B62',
     textAlign: 'center',
     marginTop: 7,
   },
@@ -2435,7 +2583,7 @@ const styles = StyleSheet.create({
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#7A3E22',
+    backgroundColor: '#3F5F3A',
     marginHorizontal: 3,
   },
 

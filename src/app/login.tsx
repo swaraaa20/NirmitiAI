@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: '#FFF9F2',
+    backgroundColor: '#F8F3E8',
   },
 
   languageSwitch: {
@@ -265,12 +265,12 @@ const styles = StyleSheet.create({
   },
 
   selectedLanguage: {
-    backgroundColor: '#7B4FA3',
+    backgroundColor: '#4c8044',
   },
 
   languageText: {
     fontSize: 13,
-    color: '#6B6372',
+    color: '#4c8044',
     fontWeight: '600',
   },
 
@@ -283,13 +283,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
-    color: '#30283A',
+    color: '#345b2e',
   },
 
   subtitle: {
     fontSize: 16,
     textAlign: 'center',
-    color: '#77717D',
+    color: '#345b2e',
     marginBottom: 30,
   },
 
@@ -302,13 +302,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     marginBottom: 15,
     fontSize: 15,
-    color: '#30283A',
+    color: '#345b2e',
   },
 
   button: {
     height: 52,
     borderRadius: 12,
-    backgroundColor: '#7B4FA3',
+    backgroundColor: '#4c8044',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
@@ -338,7 +338,7 @@ const styles = StyleSheet.create({
 
   signupLink: {
     fontSize: 14,
-    color: '#7B4FA3',
+    color: '#345b2e',
     fontWeight: '700',
     marginLeft: 5,
   },

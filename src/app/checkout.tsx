@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { useCart } from '../context/CartContext';
-
+import { supabase } from '../services/supabase';
 export default function CheckoutScreen() {
   const {
     cart,
@@ -20,11 +20,116 @@ export default function CheckoutScreen() {
     clearCart,
   } = useCart();
 
-  const handlePlaceOrder = () => {
-    if (cart.length === 0) {
+ const handlePlaceOrder = async () => {
+  if (cart.length === 0) {
+    Alert.alert(
+      'Your Bag is Empty',
+      'Please add a product before placing an order.'
+    );
+    return;
+  }
+
+  try {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
       Alert.alert(
-        'Your Bag is Empty',
-        'Please add a product before placing an order.'
+        'Login Required',
+        'Please login before placing an order.'
+      );
+      return;
+    }
+
+
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        buyer_id: user.id,
+        total_amount: cartTotal,
+        status: 'placed',
+      })
+      .select()
+      .single();
+
+    if (orderError || !order) {
+      console.log('ORDER ERROR:', orderError);
+      Alert.alert(
+        'Order Failed',
+        orderError?.message || 'Could not create your order.'
+      );
+      return;
+    }
+
+    const productIds = cart.map((item) => item.id);
+
+    const {
+      data: products,
+      error: productsError,
+    } = await supabase
+      .from('products')
+      .select('id, artisan_id')
+      .in('id', productIds);
+
+    if (productsError) {
+      console.log('PRODUCT ERROR:', productsError);
+
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('id', order.id);
+
+      Alert.alert(
+        'Order Failed',
+        productsError.message
+      );
+      return;
+    }
+
+    const orderItems = cart.map((item) => {
+      const product = products?.find(
+        (p) => p.id === item.id
+      );
+
+      return {
+        order_id: order.id,
+        product_id: item.id,
+        seller_id: product?.artisan_id,
+        quantity: item.quantity,
+        price: item.selling_price,
+      };
+    });
+
+    if (orderItems.some((item) => !item.seller_id)) {
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('id', order.id);
+
+      Alert.alert(
+        'Order Failed',
+        'Could not identify the seller for one of the products.'
+      );
+      return;
+    }
+
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .insert(orderItems);
+
+    if (itemsError) {
+      console.log('ORDER ITEMS ERROR:', itemsError);
+
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('id', order.id);
+
+      Alert.alert(
+        'Order Failed',
+        itemsError.message
       );
       return;
     }
@@ -44,7 +149,15 @@ export default function CheckoutScreen() {
         },
       ]
     );
-  };
+  } catch (error) {
+    console.log('CHECKOUT ERROR:', error);
+
+    Alert.alert(
+      'Error',
+      'Something went wrong while placing your order.'
+    );
+  }
+};
 
   /* EMPTY CART */
 
