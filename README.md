@@ -191,6 +191,16 @@ NirmitiAI/
 The backend and pricing service are maintained separately from the mobile application.
 
 ---
+
+## 🔐 Required Credentials & Configuration
+
+NirmitiAI uses Supabase for authentication and database management.
+
+Before running the application, create a Supabase project and configure the following environment variables in a `.env` file:
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 ## 🚀 Getting Started
 
 ### Prerequisites
